@@ -1,0 +1,7 @@
+{
+  "/page": "app/page.js",
+  "/media/news/page": "app/media/news/page.js",
+  "/careers/overview/page": "app/careers/overview/page.js",
+  "/request-quote/page": "app/request-quote/page.js",
+  "/careers/life-at-fecto/page": "app/careers/life-at-fecto/page.js"
+}
