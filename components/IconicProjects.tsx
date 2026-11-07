@@ -177,3 +177,4 @@ export const IconicProjects: React.FC<IconicProjectsProps> = ({
 };
 
 export default IconicProjects;
+

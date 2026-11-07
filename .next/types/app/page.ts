@@ -1,4 +1,4 @@
-// File: E:\Fecto Group\app\page.tsx
+// File: E:\Fecto Group\fectocement\app\page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

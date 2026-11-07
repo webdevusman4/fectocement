@@ -6,140 +6,15 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+    "/not-found": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/not-found.js"
+    ],
     "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
-    ],
-    "/company/our-story/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/company/our-story/page.js"
-    ],
-    "/company/vision-mission/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/company/vision-mission/page.js"
-    ],
-    "/company/leadership/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/company/leadership/page.js"
-    ],
-    "/infrastructure/sangjani-plant/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/infrastructure/sangjani-plant/page.js"
-    ],
-    "/company/corporate-profile/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/company/corporate-profile/page.js"
-    ],
-    "/infrastructure/iconic-projects/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/infrastructure/iconic-projects/page.js"
-    ],
-    "/infrastructure/production-capabilities/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/infrastructure/production-capabilities/page.js"
-    ],
-    "/csr/sustainability-initiatives/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/csr/sustainability-initiatives/page.js"
-    ],
-    "/csr/carbon-reduction/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/csr/carbon-reduction/page.js"
-    ],
-    "/csr/community-development/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/csr/community-development/page.js"
-    ],
-    "/company/history/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/company/history/page.js"
-    ],
-    "/investors/reports/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/investors/reports/page.js"
-    ],
-    "/investors/financial-ratios/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/investors/financial-ratios/page.js"
-    ],
-    "/investors/pattern-of-shareholding/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/investors/pattern-of-shareholding/page.js"
-    ],
-    "/investors/dividend-declarations/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/investors/dividend-declarations/page.js"
-    ],
-    "/investors/agm-eogm-notices/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/investors/agm-eogm-notices/page.js"
-    ],
-    "/investors/psx-disclosures/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/investors/psx-disclosures/page.js"
-    ],
-    "/investors/grievances/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/investors/grievances/page.js"
-    ],
-    "/investors/corporate-governance/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/investors/corporate-governance/page.js"
-    ],
-    "/investors/psx-market-data/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/investors/psx-market-data/page.js"
-    ],
-    "/careers/overview/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/careers/overview/page.js"
-    ],
-    "/careers/life-at-fecto/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/careers/life-at-fecto/page.js"
-    ],
-    "/careers/trainee-programs/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/careers/trainee-programs/page.js"
-    ],
-    "/careers/workplace-safety/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/careers/workplace-safety/page.js"
-    ],
-    "/media/news/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/media/news/page.js"
-    ],
-    "/request-quote/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/request-quote/page.js"
     ]
   }
 }
