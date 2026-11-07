@@ -76,8 +76,8 @@ export default function HomePage() {
             }}
             backgroundImageUrl="/herobg.jpg"
             bagImageUrl="/fecto-50kg-bag.png"
-            videoWebmUrl="/fecto-bag-transparent.webm"
-            videoMp4Url="/fecto-bag.mp4"
+            videoWebmUrl="/Untitled design.webm"
+            videoMp4Url="/Untitled design.mp4"
           />
 
           {/* Stakeholder Routing Grid */}

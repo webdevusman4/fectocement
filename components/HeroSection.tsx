@@ -27,8 +27,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreProducts,
   backgroundImageUrl = '/herobg.jpg',
   bagImageUrl = '/fecto-50kg-bag.png',
-  videoWebmUrl = '/fecto-bag-transparent.webm',
-  videoMp4Url = '/fecto-bag.mp4',
+  videoWebmUrl = '/Untitled design.webm',
+  videoMp4Url = '/Untitled design.mp4',
   className = '',
 }) => {
   return (
@@ -122,6 +122,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               {/* Transparent Loop Video with Deep Drop Shadow */}
               <div className="relative z-10 drop-shadow-[0_25px_50px_rgba(0,0,0,0.85)] transition-transform duration-500 group-hover:scale-105">
                 <video
+                  key={videoMp4Url || videoWebmUrl || 'hero-video'}
                   autoPlay
                   loop
                   muted
@@ -129,8 +130,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   preload="auto"
                   className="w-auto max-w-[280px] sm:max-w-[340px] md:max-w-[400px] lg:max-w-[460px] max-h-[580px] object-contain"
                 >
-                  <source src={videoWebmUrl} type="video/webm; codecs=vp9" />
-                  <source src={videoMp4Url} type="video/mp4" />
+                  {videoWebmUrl && <source src={videoWebmUrl} type="video/webm; codecs=vp9" />}
+                  {videoMp4Url && <source src={videoMp4Url} type="video/mp4" />}
                   {/* Fallback Image */}
                   <Image
                     src={bagImageUrl}

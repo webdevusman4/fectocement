@@ -41,8 +41,8 @@ export default function SampleHomeContent({
         }}
         backgroundImageUrl="/herobg.jpg"
         bagImageUrl="/fecto-50kg-bag.png"
-        videoWebmUrl="/fecto-bag-transparent.webm"
-        videoMp4Url="/fecto-bag.mp4"
+        videoWebmUrl="/Untitled design.webm"
+        videoMp4Url="/Untitled design.mp4"
       />
 
       {/* 2. Stats Bento Section (Crucial: Preserved & Prominently Positioned) */}
@@ -78,7 +78,7 @@ export default function SampleHomeContent({
         }}
       />
 
-      {/* 8. Sustainability & ESG (Heavy navy visual chapter) */}
+      {/* 8. Sustainability & ESG (Eco & sustainability chapter) */}
       <SustainabilitySection
         onDownloadReport={() => {
           alert('Downloading Fecto Cement 2026 ESG & Sustainability Report...');
