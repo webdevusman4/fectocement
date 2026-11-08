@@ -57,7 +57,7 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
 }) => {
   const ctaRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const spacerRef = useRef<HTMLDivElement>(null);
 
   const { simple, reduced: isReduced } = useMotionPrefs();
 
@@ -68,7 +68,11 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
   });
 
   const headlineY = useTransform(ctaProgress, [0, 1], ['100%', '0%']);
-  const buttonsOpacity = useTransform(ctaProgress, [0.4, 0.9], [0, 1]);
+  const headlineOpacity = useTransform(ctaProgress, [0, 0.7], [0, 1]);
+  const descY = useTransform(ctaProgress, [0.15, 0.75], [20, 0]);
+  const descOpacity = useTransform(ctaProgress, [0.15, 0.75], [0, 1]);
+  const buttonsY = useTransform(ctaProgress, [0.3, 0.85], [20, 0]);
+  const buttonsOpacity = useTransform(ctaProgress, [0.3, 0.85], [0, 1]);
 
   // Footer measurement and curtain configuration
   const [footerHeight, setFooterHeight] = useState<number>(0);
@@ -109,15 +113,29 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
 
   const isCurtain = !simple && !isTallerThan100svh && footerHeight > 0;
 
-  // Sentinel IntersectionObserver: activates footer visibility when approaching bottom
+  // Unmask scroll progress: tracks the scroll distance as CTA slides up over the fixed footer
+  const { scrollYProgress: unmaskProgress } = useScroll({
+    target: spacerRef,
+    offset: ['start end', 'end end'],
+  });
+
+  // Footer reveal transforms: smooth opacity, subtle parallax drift, and atmospheric scrim lift
+  const footerContentOpacity = useTransform(unmaskProgress, [0, 0.65], [0.35, 1]);
+  const footerContentY = useTransform(unmaskProgress, [0, 1], [-40, 0]);
+  const footerContentScale = useTransform(unmaskProgress, [0, 1], [0.98, 1]);
+  const footerScrimOpacity = useTransform(unmaskProgress, [0, 0.75], [0.35, 0]);
+  const wordmarkY = useTransform(unmaskProgress, [0, 1], ['22%', '16%']);
+  const wordmarkOpacity = useTransform(unmaskProgress, [0, 0.8], [0.03, 0.08]);
+
+  // IntersectionObserver: activates footer visibility when spacer enters viewport range
   useEffect(() => {
     if (!isCurtain) {
       setIsFooterVisible(true);
       return;
     }
 
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    const spacer = spacerRef.current;
+    if (!spacer) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -125,11 +143,11 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
         setIsFooterVisible(entry?.isIntersecting ?? false);
       },
       {
-        rootMargin: '0px 0px 80px 0px',
+        rootMargin: '200px 0px 0px 0px',
       }
     );
 
-    observer.observe(sentinel);
+    observer.observe(spacer);
     return () => observer.disconnect();
   }, [isCurtain]);
 
@@ -158,9 +176,7 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
       <section
         ref={ctaRef}
         id="cta"
-        className={`relative ${Z.cta} -mt-10 rounded-t-[40px] rounded-b-[40px] bg-[#000080] text-white shadow-[0_-20px_60px_rgba(0,0,60,0.25)] overflow-hidden py-16 sm:py-20 lg:py-24 border-b border-white/10 ${
-          isCurtain ? 'md:mb-[var(--footer-h)]' : ''
-        }`}
+        className={`relative ${Z.cta} -mt-10 rounded-t-[40px] rounded-b-[40px] bg-[#000080] text-white shadow-[0_-20px_60px_rgba(0,0,60,0.25),0_30px_70px_rgba(0,0,30,0.45),0_10px_20px_rgba(0,0,30,0.3)] overflow-hidden py-16 sm:py-20 lg:py-24 border-b border-white/10`}
       >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
@@ -181,7 +197,7 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
                   </motion.span>
                 ) : (
                   <motion.span
-                    style={{ y: headlineY }}
+                    style={{ y: headlineY, opacity: headlineOpacity }}
                     className="block text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-[1.1]"
                   >
                     Ready to build the future?
@@ -189,14 +205,23 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
                 )}
               </span>
 
-              <p className="text-blue-200 text-base md:text-lg font-normal leading-relaxed mt-3">
-                Partner with Fecto Cement for bulk supplies and mega-project contracts.
-              </p>
+              {simple ? (
+                <p className="text-blue-200 text-base md:text-lg font-normal leading-relaxed mt-3">
+                  Partner with Fecto Cement for bulk supplies and mega-project contracts.
+                </p>
+              ) : (
+                <motion.p
+                  style={{ y: descY, opacity: descOpacity }}
+                  className="text-blue-200 text-base md:text-lg font-normal leading-relaxed mt-3"
+                >
+                  Partner with Fecto Cement for bulk supplies and mega-project contracts.
+                </motion.p>
+              )}
             </div>
 
             {/* Right Action Buttons */}
             <motion.div
-              style={simple ? undefined : { opacity: buttonsOpacity }}
+              style={simple ? undefined : { opacity: buttonsOpacity, y: buttonsY }}
               initial={simple ? { opacity: 0 } : undefined}
               whileInView={simple ? { opacity: 1 } : undefined}
               viewport={{ once: true }}
@@ -235,8 +260,13 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
         </div>
       </section>
 
-      {/* Sentinel Trigger: fires IntersectionObserver 80px before footer curtain unmasks */}
-      <div ref={sentinelRef} className="h-px w-full pointer-events-none" aria-hidden="true" />
+      {/* Spacer that holds the scroll height open for the fixed footer curtain on desktop */}
+      <div
+        ref={spacerRef}
+        className="hidden md:block w-full pointer-events-none"
+        style={{ height: isCurtain ? `${footerHeight}px` : 0 }}
+        aria-hidden="true"
+      />
 
       {/* ================================================================ */}
       {/* PART 2: THE CURTAIN FOOTER                                        */}
@@ -252,18 +282,31 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
         } ${className}`}
         style={isCurtain ? { visibility: isFooterVisible ? 'visible' : 'hidden' } : undefined}
       >
-        {/* Giant Architectural Wordmark: cropped 16% at bottom edge */}
-        <div
+        {/* Atmospheric Scrim: melts away as the curtain opens */}
+        {isCurtain && !simple && (
+          <motion.div
+            aria-hidden="true"
+            style={{ opacity: footerScrimOpacity }}
+            className="pointer-events-none absolute inset-0 bg-[#000030] z-[5]"
+          />
+        )}
+
+        {/* Giant Architectural Wordmark: cropped 16% at bottom edge with subtle rise */}
+        <motion.div
           aria-hidden="true"
+          style={isCurtain && !simple ? { y: wordmarkY, opacity: wordmarkOpacity } : undefined}
           className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-[16%] select-none z-0 overflow-hidden w-full text-center"
         >
           <span className="block font-display text-[27vw] font-black leading-[0.8] tracking-tighter text-[#F4D5AB]/[0.07]">
             FECTO
           </span>
-        </div>
+        </motion.div>
 
-        {/* The Mega Footer Grid */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-16">
+        {/* The Mega Footer Grid with scrubbed fade-in & parallax rise */}
+        <motion.div
+          style={isCurtain && !simple ? { opacity: footerContentOpacity, y: footerContentY, scale: footerContentScale } : undefined}
+          className="relative z-10 max-w-7xl mx-auto px-6 py-16"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
             
             {/* Column 1: Brand & Legacy */}
@@ -444,10 +487,13 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
             </div>
 
           </div>
-        </div>
+        </motion.div>
 
         {/* The Bottom Legal Bar */}
-        <div className="relative z-10 border-t border-white/10">
+        <motion.div
+          style={isCurtain && !simple ? { opacity: footerContentOpacity } : undefined}
+          className="relative z-10 border-t border-white/10"
+        >
           <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
             
             {/* Left: Copyright */}
@@ -477,7 +523,7 @@ export const CorporateFooter: React.FC<CorporateFooterProps> = ({
             </div>
 
           </div>
-        </div>
+        </motion.div>
 
       </footer>
     </>
