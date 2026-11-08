@@ -33,6 +33,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   return (
     <section
+      data-tone="dark"
       className={`relative min-h-screen w-full flex items-center justify-center bg-black overflow-hidden ${className}`}
     >
       {/* 1. CRYSTAL CLEAR BACKGROUND IMAGE (NO BLUR, FULL NATURAL RESOLUTION) */}

@@ -8,12 +8,17 @@ import {
   motion,
   useInView,
   useMotionValue,
+  useMotionValueEvent,
   useReducedMotion,
   useSpring,
   useTransform,
   useVelocity,
 } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { useMotionPrefs } from '@/hooks/useMotionPrefs';
+import { useSectionProgress } from '@/hooks/useSectionProgress';
+import { scrollToY } from '@/components/SmoothScroll';
+import { Z } from '@/lib/motion';
 
 /* ───────────── constants ───────────── */
 
@@ -67,6 +72,7 @@ export interface PlantAnatomyProps {
   syncHash?: boolean;
   showMockNotice?: boolean;
   debug?: boolean; // also on when the URL has ?plantDebug=1
+  scrollMode?: 'pinned' | 'free';
 }
 
 // re-author panX/panY/scale after the final aerial is chosen (use debug mode)
@@ -293,8 +299,6 @@ function TourButton({ on, onToggle, compact }: { on: boolean; onToggle: () => vo
   );
 }
 
-const HINT = 'Pick a stage or press Fly through';
-
 /* ───────────── main component ───────────── */
 
 export default function PlantAnatomy({
@@ -308,7 +312,9 @@ export default function PlantAnatomy({
   syncHash = false,
   showMockNotice = true,
   debug = false,
+  scrollMode,
 }: PlantAnatomyProps) {
+  const outerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const desktopPills = useRef<(HTMLButtonElement | null)[]>([]);
@@ -317,12 +323,34 @@ export default function PlantAnatomy({
   const hintShown = useRef(false);
   const hintTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
+  const { simple } = useMotionPrefs();
+  const isPinned = (scrollMode ?? (!simple ? 'pinned' : 'free')) === 'pinned';
+
+  // Section progress during pinning: start start -> end end
+  const p = useSectionProgress(outerRef, 'pin');
+
+  // Iris opening style for pinned mode: window expands from inset(12svh 8vw round 32px) to 0
+  const irisClipPath = useTransform(p, (v) => {
+    const q = Math.min(1, Math.max(0, v / 0.1));
+    const svh = (1 - q) * 12;
+    const vw = (1 - q) * 8;
+    const rad = (1 - q) * 32;
+    return `inset(${svh}svh ${vw}vw round ${rad}px)`;
+  });
+
+  // HUD opacity: fades in from 0 to 1 as q moves from 0.75 to 1.0 (p between 0.075 and 0.1)
+  const hudOpacity = useTransform(p, (v) => {
+    const q = Math.min(1, Math.max(0, v / 0.1));
+    return Math.min(1, Math.max(0, (q - 0.75) * 4));
+  });
+
   const isReduced = Boolean(useReducedMotion());
   const isInView = useInView(stageRef, { amount: 0.5 });
 
   const [stageSize, setStageSize] = useState({ vw: 1280, vh: 720 });
   const [isMobile, setIsMobile] = useState(false);
   const [activeNodeId, setActiveNodeId] = useState<string>(() => initialNodeId || nodes[0]?.id || 'overview');
+  const activeNodeIdRef = useRef<string>(activeNodeId);
   const [isTouring, setIsTouring] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -333,6 +361,12 @@ export default function PlantAnatomy({
 
   const activeIndex = useMemo(() => Math.max(0, nodes.findIndex((n) => n.id === activeNodeId)), [nodes, activeNodeId]);
   const activeNode = nodes[activeIndex] ?? nodes[0];
+  const lastIndexRef = useRef<number>(activeIndex);
+
+  useEffect(() => {
+    activeNodeIdRef.current = activeNodeId;
+    lastIndexRef.current = activeIndex;
+  }, [activeNodeId, activeIndex]);
 
   // Camera motion values
   const x = useMotionValue(0);
@@ -354,15 +388,17 @@ export default function PlantAnatomy({
     else if (new URLSearchParams(window.location.search).get('plantDebug') === '1') setIsDebug(true);
   }, [debug]);
 
-  /* first-view hint: ref guard, so state changes can never cancel the timers */
+  /* hint timers cleanup */
+  useEffect(() => () => hintTimers.current.forEach(clearTimeout), []);
+
+  /* first-view hint for free mode */
   useEffect(() => {
-    if (!isInView || isReduced || hintShown.current) return;
+    if (isPinned || !isInView || isReduced || hintShown.current) return;
     hintShown.current = true;
     setShowHint(true);
     setIsPulsing(true);
     hintTimers.current = [setTimeout(() => setIsPulsing(false), 2400), setTimeout(() => setShowHint(false), 4000)];
-  }, [isInView, isReduced]);
-  useEffect(() => () => hintTimers.current.forEach(clearTimeout), []);
+  }, [isInView, isReduced, isPinned]);
 
   /* stage size and breakpoint */
   useEffect(() => {
@@ -387,44 +423,109 @@ export default function PlantAnatomy({
     };
   }, []);
 
+  /* Programmatic scroll helper to target a specific stage center in pinned mode */
+  const scrollToStage = useCallback(
+    (targetIndex: number, instant: boolean = isReduced) => {
+      const outerEl = outerRef.current;
+      if (!outerEl || typeof window === 'undefined') return;
+      const n = nodes.length;
+      const clampedIndex = Math.max(0, Math.min(n - 1, targetIndex));
+      const pTarget = clampedIndex === 0 ? 0.06 : 0.12 + ((clampedIndex - 0.5) / (n - 1)) * 0.88;
+      const rect = outerEl.getBoundingClientRect();
+      const outerTop = rect.top + window.scrollY;
+      const outerHeight = outerEl.offsetHeight;
+      const innerHeight = window.innerHeight;
+      const targetY = outerTop + pTarget * Math.max(0, outerHeight - innerHeight);
+      scrollToY(targetY, instant);
+    },
+    [nodes.length, isReduced]
+  );
+
+  /* stage from scroll in pinned mode */
+  const n = nodes.length;
+  useMotionValueEvent(p, 'change', (v) => {
+    if (!isPinned) return;
+    const index = v < 0.12 ? 0 : Math.min(n - 1, 1 + Math.floor(((v - 0.12) / 0.88) * (n - 1)));
+    if (index !== lastIndexRef.current) {
+      lastIndexRef.current = index;
+      const targetNode = nodes[index];
+      if (targetNode) {
+        activeNodeIdRef.current = targetNode.id;
+        setActiveNodeId(targetNode.id);
+      }
+    }
+
+    // Hint fires the first time p > 0.1 in pinned mode
+    if (!hintShown.current && v > 0.1 && !isReduced) {
+      hintShown.current = true;
+      setShowHint(true);
+      setIsPulsing(true);
+      hintTimers.current = [
+        setTimeout(() => setIsPulsing(false), 2400),
+        setTimeout(() => setShowHint(false), 4000),
+      ];
+    }
+  });
+
   /* optional URL hash sync */
   useEffect(() => {
     if (!syncHash) return;
     const raw = window.location.hash.replace(/^#/, '').replace(/^stage-/, '');
-    const hit = nodes.find((n) => n.id === raw);
-    if (hit) setActiveNodeId(hit.id);
-  }, [syncHash, nodes]);
+    const hitIndex = nodes.findIndex((n) => n.id === raw);
+    if (hitIndex !== -1) {
+      if (isPinned) {
+        const timer = setTimeout(() => {
+          scrollToStage(hitIndex, true);
+        }, 120);
+        return () => clearTimeout(timer);
+      } else {
+        setActiveNodeId(nodes[hitIndex].id);
+      }
+    }
+  }, [syncHash, nodes, isPinned, scrollToStage]);
+
   useEffect(() => {
     if (!syncHash) return;
     const h = `#stage-${activeNodeId}`;
     if (window.location.hash !== h) window.history.replaceState(null, '', h);
   }, [syncHash, activeNodeId]);
 
-  /* selection helpers (any manual interaction stops the tour) */
-  const stopTour = useCallback(() => setIsTouring(false), []);
+  /* selection helpers */
   const selectIndex = useCallback(
     (i: number) => {
       setIsTouring(false);
-      const t = nodes[i];
-      if (t) setActiveNodeId(t.id);
+      if (isPinned) {
+        scrollToStage(i);
+      } else {
+        const t = nodes[i];
+        if (t) setActiveNodeId(t.id);
+      }
     },
-    [nodes]
+    [isPinned, scrollToStage, nodes]
   );
+
   const step = useCallback(
     (d: 1 | -1) => {
       setIsTouring(false);
-      setActiveNodeId((cur) => {
-        const i = nodes.findIndex((n) => n.id === cur);
-        return nodes[(i + d + nodes.length) % nodes.length]?.id ?? cur;
-      });
+      if (isPinned) {
+        const curIdx = nodes.findIndex((n) => n.id === activeNodeIdRef.current);
+        const targetIdx = (curIdx + d + nodes.length) % nodes.length;
+        scrollToStage(targetIdx);
+      } else {
+        setActiveNodeId((cur) => {
+          const i = nodes.findIndex((n) => n.id === cur);
+          return nodes[(i + d + nodes.length) % nodes.length]?.id ?? cur;
+        });
+      }
     },
-    [nodes]
+    [isPinned, nodes, scrollToStage]
   );
+
   const toggleTour = useCallback(() => setIsTouring((t) => !t), []);
 
-  /* auto tour */
+  /* auto tour (only active in free mode) */
   useEffect(() => {
-    if (!isTouring || !isInView || isReduced) return;
+    if (isPinned || !isTouring || !isInView || isReduced) return;
     const id = setInterval(() => {
       if (document.hidden) return;
       setActiveNodeId((cur) => {
@@ -433,7 +534,7 @@ export default function PlantAnatomy({
       });
     }, TOUR_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [isTouring, isInView, isReduced, nodes]);
+  }, [isPinned, isTouring, isInView, isReduced, nodes]);
 
   /* keep the active mobile pill centred */
   useEffect(() => {
@@ -483,7 +584,7 @@ export default function PlantAnatomy({
   const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDebug || !canvasRef.current) return;
     const r = canvasRef.current.getBoundingClientRect();
-    const clamp = (n: number) => Math.max(0, Math.min(100, Number(n.toFixed(1))));
+    const clamp = (val: number) => Math.max(0, Math.min(100, Number(val.toFixed(1))));
     const panX = clamp(((e.clientX - r.left) / r.width) * 100);
     const panY = clamp(((e.clientY - r.top) / r.height) * 100);
     setDebugCoords({ panX, panY });
@@ -492,196 +593,219 @@ export default function PlantAnatomy({
 
   if (!activeNode) return null;
 
+  const hintText = isPinned ? 'Scroll or pick a stage' : 'Pick a stage or press Fly through';
+
   return (
-    <section
+    <div
+      ref={outerRef}
       id="plant-anatomy"
-      aria-label="Plant anatomy"
-      className={`relative isolate h-[100svh] min-h-[640px] w-full select-none overflow-hidden bg-[#0A0F1F] text-white ${className}`}
+      className={`${Z.plant} relative rounded-t-[40px] -mt-10 shadow-[0_-20px_60px_rgba(0,0,60,0.25)] ${className}`}
+      style={isPinned ? { height: `calc(100svh + ${40 + nodes.length * 35}svh)` } : undefined}
     >
-      {/* Stage: the drone canvas */}
-      <motion.div
-        ref={stageRef}
-        onClick={handleStageClick}
-        onPanEnd={(_, info) => {
-          if (isDebug) return;
-          const { offset, velocity } = info;
-          const swipe = (Math.abs(offset.x) > 60 && Math.abs(offset.x) > 1.5 * Math.abs(offset.y)) || Math.abs(velocity.x) > 500;
-          if (swipe) step(offset.x < 0 || velocity.x < -500 ? 1 : -1);
-        }}
-        className={`absolute inset-0 touch-pan-y overflow-hidden ${isDebug ? 'cursor-crosshair' : ''}`}
+      <section
+        data-tone="dark"
+        aria-label="Plant anatomy"
+        className={`h-[100svh] min-h-[640px] w-full select-none overflow-hidden bg-[#000080] rounded-t-[40px] relative isolate text-white ${
+          isPinned ? 'sticky top-0' : ''
+        }`}
       >
+        {/* Stage & HUD Iris container: clips like a window in pinned mode */}
         <motion.div
-          ref={canvasRef}
-          style={{ width: canvasW, height: canvasH, marginLeft: -canvasW / 2, marginTop: -canvasH / 2, x, y, scale: cameraScale }}
-          className={`absolute left-1/2 top-1/2 origin-center transform-gpu ${isMoving ? 'will-change-transform' : ''}`}
+          style={isPinned ? { clipPath: irisClipPath } : undefined}
+          className="absolute inset-0 overflow-hidden"
         >
-          {imageError ? (
-            <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(160deg,#1c2a6b,#0A0F1F)] bg-[linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] bg-[size:48px_48px] p-8 text-center">
-              <span className="font-mono text-sm text-[#F4D5AB]">Aerial placeholder: {imageSrc}</span>
-            </div>
-          ) : (
-            <Image
-              src={imageSrc}
-              alt={imageAlt}
-              fill
-              priority
-              sizes="(min-width: 768px) 150vw, 280vw"
-              draggable={false}
-              placeholder={blurDataURL ? 'blur' : 'empty'}
-              blurDataURL={blurDataURL}
-              onError={() => setImageError(true)}
-              className="select-none object-cover"
-            />
-          )}
-
-          {nodes.map((n) => {
-            if (n.id === 'overview') return null;
-            const on = n.id === activeNode.id;
-            return (
-              <motion.button
-                key={n.id}
-                type="button"
-                tabIndex={-1}
-                aria-hidden="true"
-                onClick={(e) => {
-                  if (isDebug) return e.stopPropagation();
-                  selectIndex(nodes.indexOf(n));
-                }}
-                style={{ left: `${n.panX}%`, top: `${n.panY}%`, scale: markerScale }}
-                className={`group absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center md:size-7 ${isDebug ? 'pointer-events-none' : 'cursor-pointer'}`}
-              >
-                {isPulsing && !isReduced && (
-                  <motion.span
-                    aria-hidden="true"
-                    initial={{ scale: 1, opacity: 0.6 }}
-                    animate={{ scale: 2.2, opacity: 0 }}
-                    transition={{ duration: 1.2, repeat: 1, ease: 'easeOut' }}
-                    className="pointer-events-none absolute inset-0 rounded-full border-2 border-[#F4D5AB]"
-                  />
-                )}
-                {on ? (
-                  <>
-                    <span className="absolute inset-0 animate-ping rounded-full bg-[#F4D5AB]/40 motion-reduce:animate-none" />
-                    <span className="absolute inset-0 rounded-full border-2 border-[#F4D5AB]" />
-                    <span className="size-2.5 rounded-full bg-[#F4D5AB] shadow-md md:size-3.5" />
-                  </>
-                ) : (
-                  <span className="flex size-4 items-center justify-center rounded-full border border-white/70 bg-black/40 transition-colors group-hover:border-[#F4D5AB] md:size-5">
-                    <span className="size-1.5 rounded-full bg-white/70 transition-colors group-hover:bg-[#F4D5AB] md:size-2" />
-                  </span>
-                )}
-              </motion.button>
-            );
-          })}
-
-          {isDebug && debugCoords && (
+          {/* Stage: the drone canvas */}
+          <motion.div
+            ref={stageRef}
+            onClick={handleStageClick}
+            onPanEnd={(_, info) => {
+              if (isDebug) return;
+              const { offset, velocity } = info;
+              const swipe = (Math.abs(offset.x) > 60 && Math.abs(offset.x) > 1.5 * Math.abs(offset.y)) || Math.abs(velocity.x) > 500;
+              if (swipe) step(offset.x < 0 || velocity.x < -500 ? 1 : -1);
+            }}
+            className={`absolute inset-0 touch-pan-y overflow-hidden ${isDebug ? 'cursor-crosshair' : ''}`}
+          >
             <motion.div
-              style={{ left: `${debugCoords.panX}%`, top: `${debugCoords.panY}%`, scale: markerScale }}
-              className="pointer-events-none absolute z-50 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+              ref={canvasRef}
+              style={{ width: canvasW, height: canvasH, marginLeft: -canvasW / 2, marginTop: -canvasH / 2, x, y, scale: cameraScale }}
+              className={`absolute left-1/2 top-1/2 origin-center transform-gpu ${isMoving ? 'will-change-transform' : ''}`}
             >
-              <div className="size-4 rounded-full border-2 border-red-500 bg-red-500/30" />
-              <div className="absolute h-px w-8 bg-red-400" />
-              <div className="absolute h-8 w-px bg-red-400" />
+              {imageError ? (
+                <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(160deg,#1c2a6b,#0A0F1F)] bg-[linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] bg-[size:48px_48px] p-8 text-center">
+                  <span className="font-mono text-sm text-[#F4D5AB]">Aerial placeholder: {imageSrc}</span>
+                </div>
+              ) : (
+                <Image
+                  src={imageSrc}
+                  alt={imageAlt}
+                  fill
+                  priority
+                  sizes="(min-width: 768px) 150vw, 280vw"
+                  draggable={false}
+                  placeholder={blurDataURL ? 'blur' : 'empty'}
+                  blurDataURL={blurDataURL}
+                  onError={() => setImageError(true)}
+                  className="select-none object-cover"
+                />
+              )}
+
+              {nodes.map((n) => {
+                if (n.id === 'overview') return null;
+                const on = n.id === activeNode.id;
+                return (
+                  <motion.button
+                    key={n.id}
+                    type="button"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    onClick={(e) => {
+                      if (isDebug) return e.stopPropagation();
+                      selectIndex(nodes.indexOf(n));
+                    }}
+                    style={{ left: `${n.panX}%`, top: `${n.panY}%`, scale: markerScale }}
+                    className={`group absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center md:size-7 ${isDebug ? 'pointer-events-none' : 'cursor-pointer'}`}
+                  >
+                    {isPulsing && !isReduced && (
+                      <motion.span
+                        aria-hidden="true"
+                        initial={{ scale: 1, opacity: 0.6 }}
+                        animate={{ scale: 2.2, opacity: 0 }}
+                        transition={{ duration: 1.2, repeat: 1, ease: 'easeOut' }}
+                        className="pointer-events-none absolute inset-0 rounded-full border-2 border-[#F4D5AB]"
+                      />
+                    )}
+                    {on ? (
+                      <>
+                        <span className="absolute inset-0 animate-ping rounded-full bg-[#F4D5AB]/40 motion-reduce:animate-none" />
+                        <span className="absolute inset-0 rounded-full border-2 border-[#F4D5AB]" />
+                        <span className="size-2.5 rounded-full bg-[#F4D5AB] shadow-md md:size-3.5" />
+                      </>
+                    ) : (
+                      <span className="flex size-4 items-center justify-center rounded-full border border-white/70 bg-black/40 transition-colors group-hover:border-[#F4D5AB] md:size-5">
+                        <span className="size-1.5 rounded-full bg-white/70 transition-colors group-hover:bg-[#F4D5AB] md:size-2" />
+                      </span>
+                    )}
+                  </motion.button>
+                );
+              })}
+
+              {isDebug && debugCoords && (
+                <motion.div
+                  style={{ left: `${debugCoords.panX}%`, top: `${debugCoords.panY}%`, scale: markerScale }}
+                  className="pointer-events-none absolute z-50 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+                >
+                  <div className="size-4 rounded-full border-2 border-red-500 bg-red-500/30" />
+                  <div className="absolute h-px w-8 bg-red-400" />
+                  <div className="absolute h-8 w-px bg-red-400" />
+                </motion.div>
+              )}
             </motion.div>
+
+            {/* Parallax fog, scrims, vignette */}
+            <motion.div aria-hidden="true" style={{ x: fogX, y: fogY }} className="pointer-events-none absolute -inset-[10%] z-10 bg-gradient-to-tr from-[#F4D5AB]/[0.06] to-[#000080]/20" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 z-10 hidden w-[45%] bg-gradient-to-r from-[#0A0F1F]/70 via-[#0A0F1F]/15 to-transparent md:block" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[60%] bg-gradient-to-t from-[#0A0F1F]/90 via-[#0A0F1F]/30 to-transparent md:hidden" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(10,15,31,0.6)_100%)]" />
+          </motion.div>
+
+          {isDebug && (
+            <div className="pointer-events-none absolute left-4 top-4 z-40 rounded-lg border border-[#F4D5AB] bg-black/80 px-3.5 py-2 font-mono text-xs text-[#F4D5AB]">
+              <div className="font-bold">Plant debug mode</div>
+              <div className="mt-0.5 text-white/80">{debugCoords ? `panX: ${debugCoords.panX}, panY: ${debugCoords.panY}` : 'Click the stage to read panX / panY'}</div>
+            </div>
           )}
-        </motion.div>
 
-        {/* Parallax fog, scrims, vignette (none of them blurred) */}
-        <motion.div aria-hidden="true" style={{ x: fogX, y: fogY }} className="pointer-events-none absolute -inset-[10%] z-10 bg-gradient-to-tr from-[#F4D5AB]/[0.06] to-[#000080]/20" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 z-10 hidden w-[45%] bg-gradient-to-r from-[#0A0F1F]/70 via-[#0A0F1F]/15 to-transparent md:block" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[60%] bg-gradient-to-t from-[#0A0F1F]/90 via-[#0A0F1F]/30 to-transparent md:hidden" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(10,15,31,0.6)_100%)]" />
-      </motion.div>
+          {/* HUD */}
+          <motion.div
+            style={isPinned ? { opacity: hudOpacity } : undefined}
+            className="pointer-events-none absolute inset-0 z-20"
+          >
+            {/* Desktop HUD */}
+            <div className="hidden h-full grid-cols-[minmax(240px,300px)_1fr_minmax(340px,400px)] items-center gap-8 p-10 md:grid lg:p-14">
+              <div className="pointer-events-auto flex h-full flex-col justify-between py-2">
+                <div>
+                  <span className="font-mono text-sm text-[#F4D5AB]">Plant anatomy</span>
+                  <h2 className="mb-6 mt-1 font-display text-2xl font-bold tracking-tight text-white lg:text-3xl">From limestone to bag</h2>
+                  <PillList nodes={nodes} activeIndex={activeIndex} variant="desktop" refs={desktopPills} onSelect={selectIndex} />
+                  <AnimatePresence>
+                    {showHint && !isReduced && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.3 }}
+                        className="pointer-events-none mt-4 rounded-full border border-[#F4D5AB]/30 bg-[#0A0F1F]/70 px-3 py-1.5 text-center font-mono text-xs text-[#F4D5AB] shadow-lg backdrop-blur-md"
+                      >
+                        {hintText}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                {!isPinned && !isReduced && (
+                  <div className="border-t border-white/10 pt-6">
+                    <TourButton on={isTouring} onToggle={toggleTour} />
+                  </div>
+                )}
+              </div>
 
-      {isDebug && (
-        <div className="pointer-events-none absolute left-4 top-4 z-40 rounded-lg border border-[#F4D5AB] bg-black/80 px-3.5 py-2 font-mono text-xs text-[#F4D5AB]">
-          <div className="font-bold">Plant debug mode</div>
-          <div className="mt-0.5 text-white/80">{debugCoords ? `panX: ${debugCoords.panX}, panY: ${debugCoords.panY}` : 'Click the stage to read panX / panY'}</div>
-        </div>
-      )}
+              <div aria-hidden="true" />
 
-      {/* HUD */}
-      <div className="pointer-events-none absolute inset-0 z-20">
-        {/* Desktop */}
-        <div className="hidden h-full grid-cols-[minmax(240px,300px)_1fr_minmax(340px,400px)] items-center gap-8 p-10 md:grid lg:p-14">
-          <div className="pointer-events-auto flex h-full flex-col justify-between py-2">
-            <div>
-              <span className="font-mono text-sm text-[#F4D5AB]">Plant anatomy</span>
-              <h2 className="mb-6 mt-1 font-display text-2xl font-bold tracking-tight text-white lg:text-3xl">From limestone to bag</h2>
-              <PillList nodes={nodes} activeIndex={activeIndex} variant="desktop" refs={desktopPills} onSelect={selectIndex} />
+              <div className="flex h-full items-center justify-end">
+                <div id="plant-card-desktop" role="tabpanel" aria-labelledby={`tab-desktop-${activeNode.id}`} aria-live="polite" className="pointer-events-auto w-full">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <SpecCard key={activeNode.id} node={activeNode} index={activeIndex} total={nodes.length} variant="desktop" reduced={isReduced} onStep={step} />
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile HUD */}
+            <div className="flex h-full flex-col justify-end p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden">
+              <div className="pointer-events-auto absolute left-4 right-4 top-4 z-20 flex items-center justify-between">
+                <div>
+                  <span className="font-mono text-xs text-[#F4D5AB]">Plant anatomy</span>
+                  <h2 className="font-display text-lg font-bold tracking-tight text-white">From limestone to bag</h2>
+                </div>
+                {!isPinned && !isReduced && <TourButton on={isTouring} onToggle={toggleTour} compact />}
+              </div>
+
+              <div id="plant-card-mobile" role="tabpanel" aria-labelledby={`tab-mobile-${activeNode.id}`} aria-live="polite" className="pointer-events-auto mb-3 max-h-[42svh] w-full overflow-y-auto">
+                <AnimatePresence mode="wait" initial={false}>
+                  <SpecCard key={activeNode.id} node={activeNode} index={activeIndex} total={nodes.length} variant="mobile" reduced={isReduced} onStep={step} />
+                </AnimatePresence>
+              </div>
+
               <AnimatePresence>
                 {showHint && !isReduced && (
                   <motion.div
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
+                    exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.3 }}
-                    className="pointer-events-none mt-4 rounded-full border border-[#F4D5AB]/30 bg-[#0A0F1F]/70 px-3 py-1.5 text-center font-mono text-xs text-[#F4D5AB] shadow-lg backdrop-blur-md"
+                    className="pointer-events-none mb-2 self-center rounded-full border border-[#F4D5AB]/30 bg-[#0A0F1F]/75 px-3 py-1 font-mono text-xs text-[#F4D5AB] shadow-md backdrop-blur-md"
                   >
-                    {HINT}
+                    {hintText}
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              <PillList nodes={nodes} activeIndex={activeIndex} variant="mobile" refs={mobilePills} onSelect={selectIndex} />
             </div>
-            {!isReduced && (
-              <div className="border-t border-white/10 pt-6">
-                <TourButton on={isTouring} onToggle={toggleTour} />
-              </div>
-            )}
-          </div>
+          </motion.div>
 
-          <div aria-hidden="true" />
-
-          <div className="flex h-full items-center justify-end">
-            <div id="plant-card-desktop" role="tabpanel" aria-labelledby={`tab-desktop-${activeNode.id}`} aria-live="polite" className="pointer-events-auto w-full">
-              <AnimatePresence mode="wait" initial={false}>
-                <SpecCard key={activeNode.id} node={activeNode} index={activeIndex} total={nodes.length} variant="desktop" reduced={isReduced} onStep={step} />
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile */}
-        <div className="flex h-full flex-col justify-end p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden">
-          <div className="pointer-events-auto absolute left-4 right-4 top-4 z-20 flex items-center justify-between">
-            <div>
-              <span className="font-mono text-xs text-[#F4D5AB]">Plant anatomy</span>
-              <h2 className="font-display text-lg font-bold tracking-tight text-white">From limestone to bag</h2>
-            </div>
-            {!isReduced && <TourButton on={isTouring} onToggle={toggleTour} compact />}
-          </div>
-
-          <div id="plant-card-mobile" role="tabpanel" aria-labelledby={`tab-mobile-${activeNode.id}`} aria-live="polite" className="pointer-events-auto mb-3 max-h-[42svh] w-full overflow-y-auto">
-            <AnimatePresence mode="wait" initial={false}>
-              <SpecCard key={activeNode.id} node={activeNode} index={activeIndex} total={nodes.length} variant="mobile" reduced={isReduced} onStep={step} />
-            </AnimatePresence>
-          </div>
-
-          <AnimatePresence>
-            {showHint && !isReduced && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.3 }}
-                className="pointer-events-none mb-2 self-center rounded-full border border-[#F4D5AB]/30 bg-[#0A0F1F]/75 px-3 py-1 font-mono text-xs text-[#F4D5AB] shadow-md backdrop-blur-md"
-              >
-                {HINT}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <PillList nodes={nodes} activeIndex={activeIndex} variant="mobile" refs={mobilePills} onSelect={selectIndex} />
-        </div>
-      </div>
-
-      {showMockNotice && (
-        <div className="pointer-events-none absolute bottom-4 right-4 z-30 md:bottom-6 md:right-8">
-          <span className="inline-block rounded-full border border-white/10 bg-black/40 px-3 py-1 font-mono text-[11px] text-white/80 backdrop-blur-sm">
-            Illustrative image, sample figures
-          </span>
-        </div>
-      )}
-    </section>
+          {showMockNotice && (
+            <motion.div
+              style={isPinned ? { opacity: hudOpacity } : undefined}
+              className="pointer-events-none absolute bottom-4 right-4 z-30 md:bottom-6 md:right-8"
+            >
+              <span className="inline-block rounded-full border border-white/10 bg-black/40 px-3 py-1 font-mono text-[11px] text-white/80 backdrop-blur-sm">
+                Illustrative image, sample figures
+              </span>
+            </motion.div>
+          )}
+        </motion.div>
+      </section>
+    </div>
   );
 }

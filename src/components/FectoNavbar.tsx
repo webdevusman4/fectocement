@@ -13,19 +13,54 @@ import MobileMenu from './MobileMenu';
 export interface FectoNavbarProps {
   onCtaClick?: () => void;
   className?: string;
+  tone?: 'arctic' | 'smoked';
 }
 
 export const FectoNavbar: React.FC<FectoNavbarProps> = ({
   onCtaClick,
   className = '',
+  tone: propTone,
 }) => {
   const [activeDropdown, setActiveDropdown] = useState<'company' | 'investors' | 'products' | 'careers' | null>(null);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [detectedTone, setDetectedTone] = useState<'arctic' | 'smoked'>('arctic');
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const langTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isSmoked = (propTone ?? detectedTone) === 'smoked';
+
+  // IntersectionObserver to flip glass tone (arctic over light, smoked over dark)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const sections = document.querySelectorAll<HTMLElement>('[data-tone]');
+    if (!sections.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting);
+        if (visible.length > 0) {
+          visible.sort((a, b) => Math.abs(a.boundingClientRect.top - 60) - Math.abs(b.boundingClientRect.top - 60));
+          const topSection = visible[0];
+          const toneAttr = topSection.target.getAttribute('data-tone');
+          if (toneAttr === 'dark') {
+            setDetectedTone('smoked');
+          } else if (toneAttr === 'light') {
+            setDetectedTone('arctic');
+          }
+        }
+      },
+      {
+        rootMargin: '-60px 0px -90% 0px',
+      }
+    );
+
+    sections.forEach((sec) => observer.observe(sec));
+    return () => observer.disconnect();
+  }, []);
 
   // Handle scroll detection for dynamic elevation styling
   useEffect(() => {
@@ -89,6 +124,28 @@ export const FectoNavbar: React.FC<FectoNavbarProps> = ({
     }
   };
 
+  const navContainerClass = isSmoked
+    ? 'glass-smoked text-white border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]'
+    : isScrolled
+    ? 'glass-arctic-scrolled text-[#000080]'
+    : 'glass-arctic text-[#000080]';
+
+  const logoColor = isSmoked ? '#FFFFFF' : '#000080';
+
+  const getLinkClass = (active: boolean) => {
+    if (isSmoked) {
+      return active ? 'text-[#F4D5AB] bg-white/15' : 'text-white hover:bg-white/10';
+    }
+    return active ? 'text-[#000080] bg-[#000080]/10' : 'text-[#000080] hover:bg-[#000080]/5';
+  };
+
+  const getChevronClass = (active: boolean) => {
+    if (isSmoked) {
+      return active ? 'rotate-180 text-[#F4D5AB]' : 'text-white/70';
+    }
+    return active ? 'rotate-180 text-[#000080]' : 'text-[#000080]/70';
+  };
+
   return (
     <>
       {/* Outer Floating Wrapper: Floats exactly 12px from top margin */}
@@ -97,21 +154,19 @@ export const FectoNavbar: React.FC<FectoNavbarProps> = ({
           isScrolled ? 'pt-2' : 'pt-3'
         } ${className}`}
       >
-        {/* Floating Pill Container: Glass-Arctic light frosted material */}
+        {/* Floating Pill Container: Glass-Arctic (light) or Glass-Smoked (dark) */}
         <div
           role="navigation"
           aria-label="Main Navigation"
-          className={`pointer-events-auto relative w-full max-w-[1280px] rounded-full transition-all duration-300 ${
-            isScrolled ? 'glass-arctic-scrolled' : 'glass-arctic'
-          }`}
+          className={`pointer-events-auto relative w-full max-w-[1280px] rounded-full transition-all duration-300 ${navContainerClass}`}
         >
           {/* Subtle Top Specular Glass Reflection Rim */}
-          <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none rounded-full" />
+          <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/50 to-transparent pointer-events-none rounded-full" />
           
           {/* Main Navbar Inner Bar — 80px height */}
           <div className="flex items-center justify-between h-[80px] px-4 sm:px-6 md:px-8">
             
-            {/* 1. LEFT SIDE: OFFICIAL FECTO LOGO — BLUE COLORED (#000080) */}
+            {/* 1. LEFT SIDE: OFFICIAL FECTO LOGO */}
             <div className="flex-shrink-0 flex items-center">
               <a
                 href="/"
@@ -119,13 +174,13 @@ export const FectoNavbar: React.FC<FectoNavbarProps> = ({
                 className="group flex items-center py-1 transition-transform duration-200 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] rounded-lg"
               >
                 <FectoLogo
-                  color="#000080"
-                  className="h-8 sm:h-9 md:h-10 w-auto text-[#000080] transition-opacity duration-200 group-hover:opacity-90"
+                  color={logoColor}
+                  className="h-8 sm:h-9 md:h-10 w-auto transition-opacity duration-200 group-hover:opacity-90"
                 />
               </a>
             </div>
 
-            {/* 2. CENTER: SITE NAVIGATION LINKS (DESKTOP) — Font size 1.1rem, Fecto Navy */}
+            {/* 2. CENTER: SITE NAVIGATION LINKS (DESKTOP) */}
             <nav className="hidden lg:flex items-center justify-center space-x-1 xl:space-x-2">
               
               {/* Link 1: Company (Includes Detached Mega-Menu Dropdown) */}
@@ -140,17 +195,15 @@ export const FectoNavbar: React.FC<FectoNavbarProps> = ({
                   aria-haspopup="true"
                   onClick={() => setActiveDropdown(activeDropdown === 'company' ? null : 'company')}
                   onKeyDown={(e) => handleKeyDown(e, 'company')}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 text-[1.1rem] font-medium transition-all duration-200 ease-in-out rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] ${
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-[1.1rem] font-medium transition-all duration-200 ease-in-out rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] ${getLinkClass(
                     activeDropdown === 'company'
-                      ? 'text-[#000080] bg-[#000080]/10'
-                      : 'text-[#000080] hover:bg-[#000080]/5'
-                  }`}
+                  )}`}
                 >
                   <span>Company</span>
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ease-in-out text-[#000080]/70 ${
-                      activeDropdown === 'company' ? 'rotate-180 text-[#000080]' : ''
-                    }`}
+                    className={`w-4 h-4 transition-transform duration-200 ease-in-out ${getChevronClass(
+                      activeDropdown === 'company'
+                    )}`}
                   />
                 </button>
 
@@ -174,17 +227,15 @@ export const FectoNavbar: React.FC<FectoNavbarProps> = ({
                   aria-haspopup="true"
                   onClick={() => setActiveDropdown(activeDropdown === 'investors' ? null : 'investors')}
                   onKeyDown={(e) => handleKeyDown(e, 'investors')}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 text-[1.1rem] font-medium transition-all duration-200 ease-in-out rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] ${
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-[1.1rem] font-medium transition-all duration-200 ease-in-out rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] ${getLinkClass(
                     activeDropdown === 'investors'
-                      ? 'text-[#000080] bg-[#000080]/10'
-                      : 'text-[#000080] hover:bg-[#000080]/5'
-                  }`}
+                  )}`}
                 >
                   <span>Investors</span>
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ease-in-out text-[#000080]/70 ${
-                      activeDropdown === 'investors' ? 'rotate-180 text-[#000080]' : ''
-                    }`}
+                    className={`w-4 h-4 transition-transform duration-200 ease-in-out ${getChevronClass(
+                      activeDropdown === 'investors'
+                    )}`}
                   />
                 </button>
 
@@ -208,17 +259,15 @@ export const FectoNavbar: React.FC<FectoNavbarProps> = ({
                   aria-haspopup="true"
                   onClick={() => setActiveDropdown(activeDropdown === 'products' ? null : 'products')}
                   onKeyDown={(e) => handleKeyDown(e, 'products')}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 text-[1.1rem] font-medium transition-all duration-200 ease-in-out rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] ${
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-[1.1rem] font-medium transition-all duration-200 ease-in-out rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] ${getLinkClass(
                     activeDropdown === 'products'
-                      ? 'text-[#000080] bg-[#000080]/10'
-                      : 'text-[#000080] hover:bg-[#000080]/5'
-                  }`}
+                  )}`}
                 >
                   <span>Products</span>
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ease-in-out text-[#000080]/70 ${
-                      activeDropdown === 'products' ? 'rotate-180 text-[#000080]' : ''
-                    }`}
+                    className={`w-4 h-4 transition-transform duration-200 ease-in-out ${getChevronClass(
+                      activeDropdown === 'products'
+                    )}`}
                   />
                 </button>
 
@@ -242,17 +291,15 @@ export const FectoNavbar: React.FC<FectoNavbarProps> = ({
                   aria-haspopup="true"
                   onClick={() => setActiveDropdown(activeDropdown === 'careers' ? null : 'careers')}
                   onKeyDown={(e) => handleKeyDown(e, 'careers')}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 text-[1.1rem] font-medium transition-all duration-200 ease-in-out rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] ${
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-[1.1rem] font-medium transition-all duration-200 ease-in-out rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] ${getLinkClass(
                     activeDropdown === 'careers'
-                      ? 'text-[#000080] bg-[#000080]/10'
-                      : 'text-[#000080] hover:bg-[#000080]/5'
-                  }`}
+                  )}`}
                 >
                   <span>Careers & news</span>
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ease-in-out text-[#000080]/70 ${
-                      activeDropdown === 'careers' ? 'rotate-180 text-[#000080]' : ''
-                    }`}
+                    className={`w-4 h-4 transition-transform duration-200 ease-in-out ${getChevronClass(
+                      activeDropdown === 'careers'
+                    )}`}
                   />
                 </button>
 
@@ -278,14 +325,16 @@ export const FectoNavbar: React.FC<FectoNavbarProps> = ({
                   aria-expanded={isLangOpen}
                   aria-haspopup="true"
                   onClick={() => setIsLangOpen((prev) => !prev)}
-                  className="inline-flex items-center gap-1.5 text-[1.1rem] font-medium text-[#000080] px-3 py-1.5 rounded-full hover:bg-[#000080]/5 transition-colors cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB]"
+                  className={`inline-flex items-center gap-1.5 text-[1.1rem] font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] ${
+                    isSmoked ? 'text-white hover:bg-white/10' : 'text-[#000080] hover:bg-[#000080]/5'
+                  }`}
                 >
-                  <Globe className="w-4 h-4 text-[#000080]" />
+                  <Globe className={`w-4 h-4 ${isSmoked ? 'text-white' : 'text-[#000080]'}`} />
                   <span>EN</span>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 text-[#000080]/70 ${
-                      isLangOpen ? 'rotate-180 text-[#000080]' : ''
-                    }`}
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      isLangOpen ? 'rotate-180' : ''
+                    } ${isSmoked ? 'text-white/70' : 'text-[#000080]/70'}`}
                   />
                 </button>
 
@@ -326,12 +375,14 @@ export const FectoNavbar: React.FC<FectoNavbarProps> = ({
                 <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
 
-              {/* Mobile Menu Hamburger Button — Fecto Navy */}
+              {/* Mobile Menu Hamburger Button */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
                 aria-label="Open navigation menu"
-                className="lg:hidden p-2 rounded-full text-[#000080] hover:bg-[#000080]/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB]"
+                className={`lg:hidden p-2 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] ${
+                  isSmoked ? 'text-white hover:bg-white/10' : 'text-[#000080] hover:bg-[#000080]/5'
+                }`}
               >
                 <Menu className="w-6 h-6" />
               </button>

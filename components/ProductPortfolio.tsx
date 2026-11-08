@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   motion,
@@ -9,8 +9,12 @@ import {
   useTransform,
   useSpring,
   useReducedMotion,
+  animate,
 } from 'framer-motion';
 import { ShieldCheck, Download, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useMotionPrefs } from '@/hooks/useMotionPrefs';
+import { useSectionProgress } from '@/hooks/useSectionProgress';
+import { EASE, DUR, Z } from '@/lib/motion';
 
 /* ========================================================================== */
 /* DATA MODEL & DESIGN TOKENS                                                 */
@@ -151,11 +155,62 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
   className = '',
   showSampleNote = true,
 }) => {
+  const sectionRef = useRef<HTMLElement>(null);
   const [activeGrade, setActiveGrade] = useState<ProductGrade>('opc');
   const [imageError, setImageError] = useState(false);
 
   const reducedMotion = useReducedMotion();
   const isReduced = Boolean(reducedMotion);
+  const { simple } = useMotionPrefs();
+
+  // Entrance scroll progress: start end -> start start
+  const enter = useSectionProgress(sectionRef, 'enter');
+
+  // Scrubbed entrance transforms (md and up)
+  const bagY = useTransform(enter, (v) => (1 - v) * 140);
+  const bagScale = useTransform(enter, [0, 1], [0.9, 1]);
+  const bagOpacity = enter;
+
+  const cardLeftX = useTransform(enter, [0, 1], [-90, 0]);
+  const cardRightX = useTransform(enter, [0, 1], [90, 0]);
+  const cardOpacity = enter;
+
+  // Redraw MotionValues for leader lines (starts at 1; animates 0 -> 1 on grade switch)
+  const redraw1 = useMotionValue(1);
+  const redraw2 = useMotionValue(1);
+  const redraw3 = useMotionValue(1);
+
+  const isFirstMount = useRef(true);
+
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    if (isReduced || simple) {
+      redraw1.set(1);
+      redraw2.set(1);
+      redraw3.set(1);
+      return;
+    }
+    redraw1.set(0);
+    redraw2.set(0);
+    redraw3.set(0);
+
+    const c1 = animate(redraw1, 1, { duration: DUR.slow, ease: EASE, delay: 0 });
+    const c2 = animate(redraw2, 1, { duration: DUR.slow, ease: EASE, delay: 0.1 });
+    const c3 = animate(redraw3, 1, { duration: DUR.slow, ease: EASE, delay: 0.2 });
+
+    return () => {
+      c1.stop();
+      c2.stop();
+      c3.stop();
+    };
+  }, [activeGrade, isReduced, simple, redraw1, redraw2, redraw3]);
+
+  const pathLength1 = useTransform([enter, redraw1], ([e, r]: number[]) => (e ?? 1) * (r ?? 1));
+  const pathLength2 = useTransform([enter, redraw2], ([e, r]: number[]) => (e ?? 1) * (r ?? 1));
+  const pathLength3 = useTransform([enter, redraw3], ([e, r]: number[]) => (e ?? 1) * (r ?? 1));
 
   const currentData = SPECS[activeGrade];
 
@@ -201,11 +256,13 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
 
   return (
     <section
+      ref={sectionRef}
       id="products"
+      data-tone="dark"
       aria-label="Precision Portfolio"
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
-      className={`relative w-full min-h-[100svh] bg-[#000080] text-white overflow-hidden flex flex-col items-center justify-center py-20 md:py-28 select-none ${className}`}
+      className={`relative w-full min-h-[100svh] bg-[#000080] text-white overflow-hidden flex flex-col items-center justify-center [border-radius:50%_50%_0_0/90px_90px_0_0] -mt-[90px] ${Z.product} pt-[170px] md:pt-[202px] pb-20 md:pb-28 select-none ${className}`}
     >
       {/* ==================================================================== */}
       {/* 1. CINEMATIC BACKGROUND GLOW & ATMOSPHERE                            */}
@@ -238,7 +295,13 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
         {/* ================================================================== */}
         {/* 2. THE MAGNETIC SWITCHER (TOP)                                     */}
         {/* ================================================================== */}
-        <div className="flex flex-col items-center text-center mb-10 md:mb-14 max-w-2xl">
+        <motion.div 
+          initial={simple ? { opacity: 0 } : false}
+          whileInView={simple ? { opacity: 1 } : undefined}
+          viewport={{ once: true }}
+          transition={{ duration: DUR.base, ease: EASE }}
+          className="flex flex-col items-center text-center mb-10 md:mb-14 max-w-2xl"
+        >
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-4 shadow-sm">
             <ShieldCheck className="w-4 h-4 text-[#F4D5AB]" />
             <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB]">
@@ -297,7 +360,7 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
               );
             })}
           </div>
-        </div>
+        </motion.div>
 
         {/* ================================================================== */}
         {/* 3. CENTERPIECE STAGE (DESKTOP WITH LEADER LINES & MOTION)          */}
@@ -313,24 +376,22 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
           <div className="hidden md:block relative w-full h-[600px] max-w-[1000px]">
             
             {/* SVG LEADER LINES (viewBox 0 0 1000 600) */}
-            <svg
+            <motion.svg
               aria-hidden="true"
+              style={simple ? undefined : { opacity: enter }}
               className="absolute inset-0 w-full h-full pointer-events-none z-10"
               viewBox="0 0 1000 600"
               preserveAspectRatio="none"
             >
               {/* Line 1: Top-Left Card (280, 140) -> Dogleg (380, 140) -> Bag Shoulder (440, 220) */}
               <motion.path
-                key={`line-1-${activeGrade}`}
                 d="M 280 140 L 380 140 L 440 220"
                 fill="none"
                 stroke="#F4D5AB"
                 strokeWidth="1.5"
                 strokeDasharray="4 4"
                 strokeOpacity="0.45"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
+                style={{ pathLength: simple ? 1 : pathLength1 }}
               />
               <circle cx="280" cy="140" r="3" fill="#F4D5AB" fillOpacity="0.7" />
               <motion.circle cx="440" cy="220" r="3.5" fill="#F4D5AB" />
@@ -348,16 +409,13 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
 
               {/* Line 2: Mid-Right Card (720, 280) -> Dogleg (620, 280) -> Bag Right Edge (560, 300) */}
               <motion.path
-                key={`line-2-${activeGrade}`}
                 d="M 720 280 L 620 280 L 560 300"
                 fill="none"
                 stroke="#F4D5AB"
                 strokeWidth="1.5"
                 strokeDasharray="4 4"
                 strokeOpacity="0.45"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
+                style={{ pathLength: simple ? 1 : pathLength2 }}
               />
               <circle cx="720" cy="280" r="3" fill="#F4D5AB" fillOpacity="0.7" />
               <motion.circle cx="560" cy="300" r="3.5" fill="#F4D5AB" />
@@ -375,16 +433,13 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
 
               {/* Line 3: Bottom-Left Card (280, 440) -> Dogleg (380, 440) -> Bag Lower Left (440, 380) */}
               <motion.path
-                key={`line-3-${activeGrade}`}
                 d="M 280 440 L 380 440 L 440 380"
                 fill="none"
                 stroke="#F4D5AB"
                 strokeWidth="1.5"
                 strokeDasharray="4 4"
                 strokeOpacity="0.45"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
+                style={{ pathLength: simple ? 1 : pathLength3 }}
               />
               <circle cx="280" cy="440" r="3" fill="#F4D5AB" fillOpacity="0.7" />
               <motion.circle cx="440" cy="380" r="3.5" fill="#F4D5AB" />
@@ -399,111 +454,126 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                 animate={isReduced ? {} : { scale: [1, 1.8, 1], opacity: [0.8, 0, 0.8] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               />
-            </svg>
+            </motion.svg>
 
             {/* THE BAG CENTERPIECE (Tilt, Float, Fallback) */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
               
-              {/* Bag Pedestal Floor Glow & Shadow */}
+              {/* Outer Scrubbed Motion Wrapper */}
               <motion.div
-                aria-hidden="true"
-                animate={{
-                  boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.9)',
-                }}
-                className="absolute bottom-6 left-1/2 -translate-x-1/2 w-56 h-8 bg-black/90 blur-xl rounded-full pointer-events-none"
-              />
-
-              <motion.div
-                style={isReduced ? {} : { rotateX, rotateY, transformPerspective: 800 }}
-                animate={isReduced ? {} : { y: [0, -8, 0] }}
-                transition={
-                  isReduced
+                style={
+                  simple
                     ? undefined
                     : {
-                        y: {
-                          duration: 4,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        },
+                        y: bagY,
+                        scale: bagScale,
+                        opacity: bagOpacity,
                       }
                 }
-                className="relative flex flex-col items-center justify-center transform-gpu cursor-grab active:cursor-grabbing"
+                className="relative flex flex-col items-center"
               >
-                <div className="relative w-[280px] h-[420px] flex items-center justify-center">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={activeGrade}
-                      initial={isReduced ? false : { scale: 0.94, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={isReduced ? undefined : { scale: 1.04, opacity: 0 }}
-                      transition={{ duration: 0.35, ease: 'easeInOut' }}
-                      className="relative w-full h-full flex items-center justify-center"
-                    >
-                      {imageError ? (
-                        /* Stylized Cement Sack Fallback Card */
-                        <div className="w-[240px] h-[360px] rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center p-6 text-center shadow-2xl">
-                          <svg
-                            viewBox="0 0 100 130"
-                            className="w-24 h-32 text-[#F4D5AB] mb-3 fill-none stroke-current stroke-[2]"
-                          >
-                            <path d="M 20 15 L 80 15 L 88 120 L 12 120 Z" />
-                            <path d="M 16 15 C 25 22, 75 22, 84 15" />
-                            <path d="M 25 35 L 75 35" strokeDasharray="2 2" />
-                            <text
-                              x="50"
-                              y="65"
-                              fontSize="9"
-                              fontFamily="monospace"
-                              textAnchor="middle"
-                              fill="#F4D5AB"
-                              stroke="none"
-                              fontWeight="bold"
-                            >
-                              FECTO
-                            </text>
-                            <text
-                              x="50"
-                              y="78"
-                              fontSize="7"
-                              fontFamily="sans-serif"
-                              textAnchor="middle"
-                              fill="white"
-                              stroke="none"
-                            >
-                              {currentData.tabLabel} 50 KG
-                            </text>
-                          </svg>
-                          <span className="font-mono text-xs text-[#F4D5AB] font-semibold">
-                            {currentData.name}
-                          </span>
-                          <span className="text-[10px] text-white/60 mt-1">
-                            {currentData.bagCaption}
-                          </span>
-                        </div>
-                      ) : (
-                        <Image
-                          src={currentData.bagSrc}
-                          alt={`${currentData.name} 50kg bag`}
-                          fill
-                          priority
-                          sizes="320px"
-                          onError={() => setImageError(true)}
-                          className="object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.85)] filter contrast-[1.05]"
-                        />
-                      )}
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
+                {/* Bag Pedestal Floor Glow & Shadow */}
+                <motion.div
+                  aria-hidden="true"
+                  animate={{
+                    boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.9)',
+                  }}
+                  className="absolute bottom-6 left-1/2 -translate-x-1/2 w-56 h-8 bg-black/90 blur-xl rounded-full pointer-events-none"
+                />
 
-                {/* Bag Sub-label */}
-                <div className="mt-2 text-center pointer-events-none">
-                  <div className="text-sm font-semibold tracking-wide text-white font-sans">
-                    {currentData.name}
+                {/* Inner Pointer Tilt & Float Wrapper */}
+                <motion.div
+                  style={isReduced ? {} : { rotateX, rotateY, transformPerspective: 800 }}
+                  animate={isReduced ? {} : { y: [0, -8, 0] }}
+                  transition={
+                    isReduced
+                      ? undefined
+                      : {
+                          y: {
+                            duration: 4,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          },
+                        }
+                  }
+                  className="relative flex flex-col items-center justify-center transform-gpu cursor-grab active:cursor-grabbing"
+                >
+                  <div className="relative w-[280px] h-[420px] flex items-center justify-center">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeGrade}
+                        initial={isReduced ? false : { scale: 0.94, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={isReduced ? undefined : { scale: 1.04, opacity: 0 }}
+                        transition={{ duration: 0.35, ease: 'easeInOut' }}
+                        className="relative w-full h-full flex items-center justify-center"
+                      >
+                        {imageError ? (
+                          /* Stylized Cement Sack Fallback Card */
+                          <div className="w-[240px] h-[360px] rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center p-6 text-center shadow-2xl">
+                            <svg
+                              viewBox="0 0 100 130"
+                              className="w-24 h-32 text-[#F4D5AB] mb-3 fill-none stroke-current stroke-[2]"
+                            >
+                              <path d="M 20 15 L 80 15 L 88 120 L 12 120 Z" />
+                              <path d="M 16 15 C 25 22, 75 22, 84 15" />
+                              <path d="M 25 35 L 75 35" strokeDasharray="2 2" />
+                              <text
+                                x="50"
+                                y="65"
+                                fontSize="9"
+                                fontFamily="monospace"
+                                textAnchor="middle"
+                                fill="#F4D5AB"
+                                stroke="none"
+                                fontWeight="bold"
+                              >
+                                FECTO
+                              </text>
+                              <text
+                                x="50"
+                                y="78"
+                                fontSize="7"
+                                fontFamily="sans-serif"
+                                textAnchor="middle"
+                                fill="white"
+                                stroke="none"
+                              >
+                                {currentData.tabLabel} 50 KG
+                              </text>
+                            </svg>
+                            <span className="font-mono text-xs text-[#F4D5AB] font-semibold">
+                              {currentData.name}
+                            </span>
+                            <span className="text-[10px] text-white/60 mt-1">
+                              {currentData.bagCaption}
+                            </span>
+                          </div>
+                        ) : (
+                          <Image
+                            src={currentData.bagSrc}
+                            alt={`${currentData.name} 50kg bag`}
+                            fill
+                            priority
+                            sizes="320px"
+                            onError={() => setImageError(true)}
+                            className="object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.85)] filter contrast-[1.05]"
+                          />
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
-                  <div className="text-xs font-mono text-white/60">
-                    {currentData.bagCaption}
+
+                  {/* Bag Sub-label */}
+                  <div className="mt-2 text-center pointer-events-none">
+                    <div className="text-sm font-semibold tracking-wide text-white font-sans">
+                      {currentData.name}
+                    </div>
+                    <div className="text-xs font-mono text-white/60">
+                      {currentData.bagCaption}
+                    </div>
                   </div>
-                </div>
+                </motion.div>
               </motion.div>
             </div>
 
@@ -512,36 +582,47 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
               style={{ left: '28%', top: '23.33%' }}
               className="absolute -translate-x-full -translate-y-1/2 z-20"
             >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`card-0-${activeGrade}`}
-                  initial={isReduced ? false : { opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={isReduced ? undefined : { opacity: 0, x: -10 }}
-                  transition={{ duration: 0.35 }}
-                  className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB] font-semibold">
-                      Spec 01
-                    </span>
-                    <span className="w-2 h-2 rounded-full bg-[#F4D5AB]" />
-                  </div>
-                  <div className="text-xs text-white/70 mb-1.5 font-sans">
-                    {currentData.specs[0].label}
-                  </div>
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span className="font-display text-3xl lg:text-4xl font-bold text-white tracking-tight">
-                      <SpecCounter value={currentData.specs[0].value} reduced={isReduced} />
-                    </span>
-                    {currentData.specs[0].unit && (
-                      <span className="font-sans text-base text-[#F4D5AB] font-semibold">
-                        {currentData.specs[0].unit}
+              <motion.div
+                style={
+                  simple
+                    ? undefined
+                    : {
+                        x: cardLeftX,
+                        opacity: cardOpacity,
+                      }
+                }
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`card-0-${activeGrade}`}
+                    initial={isReduced ? false : { opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={isReduced ? undefined : { opacity: 0, x: -10 }}
+                    transition={{ duration: 0.35 }}
+                    className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB] font-semibold">
+                        Spec 01
                       </span>
-                    )}
-                  </div>
-                </motion.div>
-              </AnimatePresence>
+                      <span className="w-2 h-2 rounded-full bg-[#F4D5AB]" />
+                    </div>
+                    <div className="text-xs text-white/70 mb-1.5 font-sans">
+                      {currentData.specs[0].label}
+                    </div>
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span className="font-display text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                        <SpecCounter value={currentData.specs[0].value} reduced={isReduced} />
+                      </span>
+                      {currentData.specs[0].unit && (
+                        <span className="font-sans text-base text-[#F4D5AB] font-semibold">
+                          {currentData.specs[0].unit}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
             </div>
 
             {/* CARD 2: MID-RIGHT (Spec 02) - Touches (720, 280) */}
@@ -549,36 +630,47 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
               style={{ left: '72%', top: '46.67%' }}
               className="absolute translate-x-0 -translate-y-1/2 z-20"
             >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`card-1-${activeGrade}`}
-                  initial={isReduced ? false : { opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={isReduced ? undefined : { opacity: 0, x: 10 }}
-                  transition={{ duration: 0.35 }}
-                  className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB] font-semibold">
-                      Spec 02
-                    </span>
-                    <span className="w-2 h-2 rounded-full bg-[#F4D5AB]" />
-                  </div>
-                  <div className="text-xs text-white/70 mb-1.5 font-sans">
-                    {currentData.specs[1].label}
-                  </div>
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span className="font-display text-3xl lg:text-4xl font-bold text-white tracking-tight">
-                      <SpecCounter value={currentData.specs[1].value} reduced={isReduced} />
-                    </span>
-                    {currentData.specs[1].unit && (
-                      <span className="font-sans text-base text-[#F4D5AB] font-semibold">
-                        {currentData.specs[1].unit}
+              <motion.div
+                style={
+                  simple
+                    ? undefined
+                    : {
+                        x: cardRightX,
+                        opacity: cardOpacity,
+                      }
+                }
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`card-1-${activeGrade}`}
+                    initial={isReduced ? false : { opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={isReduced ? undefined : { opacity: 0, x: 10 }}
+                    transition={{ duration: 0.35 }}
+                    className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB] font-semibold">
+                        Spec 02
                       </span>
-                    )}
-                  </div>
-                </motion.div>
-              </AnimatePresence>
+                      <span className="w-2 h-2 rounded-full bg-[#F4D5AB]" />
+                    </div>
+                    <div className="text-xs text-white/70 mb-1.5 font-sans">
+                      {currentData.specs[1].label}
+                    </div>
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span className="font-display text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                        <SpecCounter value={currentData.specs[1].value} reduced={isReduced} />
+                      </span>
+                      {currentData.specs[1].unit && (
+                        <span className="font-sans text-base text-[#F4D5AB] font-semibold">
+                          {currentData.specs[1].unit}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
             </div>
 
             {/* CARD 3: BOTTOM-LEFT (Spec 03) - Touches (280, 440) */}
@@ -586,36 +678,47 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
               style={{ left: '28%', top: '73.33%' }}
               className="absolute -translate-x-full -translate-y-1/2 z-20"
             >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`card-2-${activeGrade}`}
-                  initial={isReduced ? false : { opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={isReduced ? undefined : { opacity: 0, x: -10 }}
-                  transition={{ duration: 0.35 }}
-                  className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB] font-semibold">
-                      Spec 03
-                    </span>
-                    <span className="w-2 h-2 rounded-full bg-[#F4D5AB]" />
-                  </div>
-                  <div className="text-xs text-white/70 mb-1.5 font-sans">
-                    {currentData.specs[2].label}
-                  </div>
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span className="font-display text-3xl lg:text-4xl font-bold text-white tracking-tight">
-                      <SpecCounter value={currentData.specs[2].value} reduced={isReduced} />
-                    </span>
-                    {currentData.specs[2].unit && (
-                      <span className="font-sans text-base text-[#F4D5AB] font-semibold">
-                        {currentData.specs[2].unit}
+              <motion.div
+                style={
+                  simple
+                    ? undefined
+                    : {
+                        x: cardLeftX,
+                        opacity: cardOpacity,
+                      }
+                }
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`card-2-${activeGrade}`}
+                    initial={isReduced ? false : { opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={isReduced ? undefined : { opacity: 0, x: -10 }}
+                    transition={{ duration: 0.35 }}
+                    className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB] font-semibold">
+                        Spec 03
                       </span>
-                    )}
-                  </div>
-                </motion.div>
-              </AnimatePresence>
+                      <span className="w-2 h-2 rounded-full bg-[#F4D5AB]" />
+                    </div>
+                    <div className="text-xs text-white/70 mb-1.5 font-sans">
+                      {currentData.specs[2].label}
+                    </div>
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span className="font-display text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                        <SpecCounter value={currentData.specs[2].value} reduced={isReduced} />
+                      </span>
+                      {currentData.specs[2].unit && (
+                        <span className="font-sans text-base text-[#F4D5AB] font-semibold">
+                          {currentData.specs[2].unit}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
             </div>
 
           </div>
@@ -624,7 +727,13 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
           <div className="md:hidden flex flex-col items-center w-full">
             
             {/* Mobile Bag Display */}
-            <div className="relative w-[220px] h-[330px] my-4 flex items-center justify-center">
+            <motion.div 
+              initial={simple ? { opacity: 0 } : false}
+              whileInView={simple ? { opacity: 1 } : undefined}
+              viewport={{ once: true }}
+              transition={{ duration: DUR.base, ease: EASE }}
+              className="relative w-[220px] h-[330px] my-4 flex items-center justify-center"
+            >
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeGrade}
@@ -656,7 +765,7 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                   )}
                 </motion.div>
               </AnimatePresence>
-            </div>
+            </motion.div>
 
             {/* Mobile Bag Label */}
             <div className="text-center mb-6">
@@ -708,7 +817,13 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
         {/* ================================================================== */}
         {/* 4. ACTION ROW: B2B PROCUREMENT & SPEC DOWNLOAD                     */}
         {/* ================================================================== */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 mt-12 md:mt-16 z-20 w-full justify-center">
+        <motion.div 
+          initial={simple ? { opacity: 0 } : false}
+          whileInView={simple ? { opacity: 1 } : undefined}
+          viewport={{ once: true }}
+          transition={{ duration: DUR.base, ease: EASE }}
+          className="flex flex-col sm:flex-row items-center gap-4 mt-12 md:mt-16 z-20 w-full justify-center"
+        >
           <button
             type="button"
             onClick={() => onRequestQuote?.(currentData.name)}
@@ -726,19 +841,25 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
             <Download className="w-4 h-4 text-white/80" />
             <span>Download Technical Data Sheet (PDF)</span>
           </button>
-        </div>
+        </motion.div>
 
         {/* ================================================================== */}
         {/* 5. CERTIFICATIONS ROW (DATA-DRIVEN)                                */}
         {/* ================================================================== */}
-        <div className="flex flex-wrap items-center justify-center gap-6 mt-8 text-xs font-mono text-white/70">
+        <motion.div 
+          initial={simple ? { opacity: 0 } : false}
+          whileInView={simple ? { opacity: 1 } : undefined}
+          viewport={{ once: true }}
+          transition={{ duration: DUR.base, ease: EASE }}
+          className="flex flex-wrap items-center justify-center gap-6 mt-8 text-xs font-mono text-white/70"
+        >
           {currentData.certifications.map((cert) => (
             <div key={cert} className="flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#F4D5AB]" />
               <span>{cert}</span>
             </div>
           ))}
-        </div>
+        </motion.div>
 
         {/* Sample Note Footnote */}
         {showSampleNote && (
@@ -748,6 +869,14 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
         )}
 
       </div>
+
+      {/* ==================================================================== */}
+      {/* 6. BOTTOM BAND: FLAT NAVY FINISH (FOR SUSTAINABILITY DOORS)          */}
+      {/* ==================================================================== */}
+      <div
+        aria-hidden="true"
+        className="absolute bottom-0 inset-x-0 h-[20svh] bg-gradient-to-t from-[#000080] to-transparent pointer-events-none z-10"
+      />
     </section>
   );
 };

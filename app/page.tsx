@@ -10,32 +10,39 @@ import IconicProjects from '@/components/IconicProjects';
 import CorporateFooter from '@/components/CorporateFooter';
 import QuoteModal from '@/components/QuoteModal';
 import SampleHomeContent from '@/components/SampleHomeContent';
-import HomeVariantSwitcher from '@/components/HomeVariantSwitcher';
+import SampleHomeV3Content from '@/components/SampleHomeV3Content';
+import HomeVariantSwitcher, { HomeVariant } from '@/components/HomeVariantSwitcher';
+import { Z } from '@/lib/motion';
 
 export default function HomePage() {
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<string>('');
-  // V2 is now the default home page experience
-  const [homeVariant, setHomeVariant] = useState<'v1' | 'v2'>('v2');
+  // V3 is now the default new sample home page experience
+  const [homeVariant, setHomeVariant] = useState<HomeVariant>('v3');
 
-  // Detect URL query parameter (?v=1 or ?legacy=true switches to V1, default is V2)
+  // Detect URL query parameter (?v=1 legacy, ?v=2 sample v2, default is v3)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('v') === '1' || params.get('page') === '1' || params.get('legacy') === 'true') {
+      const v = params.get('v');
+      if (v === '1' || params.get('legacy') === 'true') {
         setHomeVariant('v1');
-      } else {
+      } else if (v === '2') {
         setHomeVariant('v2');
+      } else {
+        setHomeVariant('v3');
       }
     }
   }, []);
 
-  const handleVariantChange = (v: 'v1' | 'v2') => {
+  const handleVariantChange = (v: HomeVariant) => {
     setHomeVariant(v);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       if (v === 'v1') {
         url.searchParams.set('v', '1');
+      } else if (v === 'v2') {
+        url.searchParams.set('v', '2');
       } else {
         url.searchParams.delete('v');
         url.searchParams.delete('sample');
@@ -61,11 +68,14 @@ export default function HomePage() {
       <FectoNavbar onCtaClick={() => handleOpenQuote()} />
 
       {/* 2. CONDITIONAL HOME PAGE EXPERIENCE */}
-      {homeVariant === 'v2' ? (
-        /* V2 (DEFAULT): FULL MODERN HOME (HeroSection + StatsBento + FounderLegacy + CompanyHistory + PlantAnatomy + B2B Grid + Portfolio + ESG + Projects + Footer) */
+      {homeVariant === 'v3' ? (
+        /* V3 (NEW SAMPLE V3): EDITORIAL MODERN HOME WITH ENHANCED FOUNDER LEGACY */
+        <SampleHomeV3Content onRequestQuote={handleOpenQuote} />
+      ) : homeVariant === 'v2' ? (
+        /* V2: SAMPLE HOME EXPERIENCE */
         <SampleHomeContent onRequestQuote={handleOpenQuote} />
       ) : (
-        /* V1 (LEGACY): STANDARD HOME (Legacy Experience) */
+        /* V1 (LEGACY): STANDARD HOME */
         <>
           {/* Hero Section */}
           <HeroSection
@@ -83,6 +93,7 @@ export default function HomePage() {
           {/* Stakeholder Routing Grid */}
           <StakeholderRoutingGrid
             onRequestQuote={() => handleOpenQuote()}
+            className={`${Z.path} relative`}
           />
 
           {/* Product Portfolio */}
@@ -96,6 +107,7 @@ export default function HomePage() {
               link.click();
               document.body.removeChild(link);
             }}
+            className={`${Z.product} relative`}
           />
 
           {/* Sustainability & ESG */}
@@ -103,6 +115,7 @@ export default function HomePage() {
             onDownloadReport={() => {
               alert('Downloading Fecto Cement 2026 ESG & Sustainability Report...');
             }}
+            className={`${Z.sustain} relative`}
           />
 
           {/* Iconic Projects */}
@@ -114,6 +127,7 @@ export default function HomePage() {
             onSelectProject={(title) => {
               handleOpenQuote(title);
             }}
+            className={`${Z.skyline} relative`}
           />
 
           {/* Mega Corporate Footer */}

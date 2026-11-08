@@ -11,6 +11,7 @@ import ProductPortfolio from '@/components/ProductPortfolio';
 import SustainabilitySection from '@/components/SustainabilitySection';
 import IconicProjects from '@/components/IconicProjects';
 import CorporateFooter from '@/components/CorporateFooter';
+import { Z } from '@/lib/motion';
 
 interface SampleHomeContentProps {
   onRequestQuote: (productName?: string) => void;
@@ -51,18 +52,18 @@ export default function SampleHomeContent({
       </div>
 
       {/* 3. Founder Legacy - The Physical "Curtain Reveal" Section */}
-      <FounderLegacy />
+      <FounderLegacy className={`${Z.founder} relative`} />
 
       {/* 4. Company History - The Zig-Zag Alternating Heritage Timeline */}
-      <CompanyHistory />
+      <CompanyHistory className={`${Z.history} relative`} />
 
       {/* 5. Plant Anatomy - Pseudo-3D Continuous Pan & Zoom Drone Tour */}
-      <PlantAnatomy />
+      <PlantAnatomy className={`${Z.plant} relative`} />
 
-      {/* 6. Stakeholder Routing Grid (B2B navigation funnel) with transparent background */}
+      {/* 6. Stakeholder Routing Grid (B2B navigation funnel) with fade-through mist */}
       <StakeholderRoutingGrid
         onRequestQuote={() => onRequestQuote()}
-        className="!bg-transparent"
+        className={`${Z.path} relative`}
       />
 
       {/* 7. Product Portfolio (Target of the Hero 'Explore products' CTA) */}
@@ -76,6 +77,7 @@ export default function SampleHomeContent({
           link.click();
           document.body.removeChild(link);
         }}
+        className={`${Z.product} relative`}
       />
 
       {/* 8. Sustainability & ESG (Eco & sustainability chapter) */}
@@ -83,6 +85,7 @@ export default function SampleHomeContent({
         onDownloadReport={() => {
           alert('Downloading Fecto Cement 2026 ESG & Sustainability Report...');
         }}
+        className={`${Z.sustain} relative`}
       />
 
       {/* 9. Iconic Projects (Gallery showcase) */}
@@ -94,7 +97,7 @@ export default function SampleHomeContent({
         onSelectProject={(title) => {
           onRequestQuote(title);
         }}
-        className="!bg-white/80 backdrop-blur-md"
+        className={`${Z.skyline} relative`}
       />
 
       {/* 10. Corporate Footer */}

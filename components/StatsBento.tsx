@@ -73,7 +73,7 @@ export default function StatsBento({
     : `relative z-10 mx-auto max-w-7xl w-full ${className}`;
 
   return (
-    <section className={wrapperClass}>
+    <section data-tone="light" className={wrapperClass}>
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:grid-cols-4">
         {STATS.map((s, i) => (
           <motion.div
