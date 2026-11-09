@@ -50,8 +50,10 @@ export default function SampleHomeContent({
       />
 
       {/* 2. Stats Bento Section (Crucial: Preserved & Prominently Positioned) */}
-      <div className="relative z-20 -mt-10 sm:-mt-16 mb-12 sm:mb-16 px-4 sm:px-6">
-        <StatsBento trigger={true} standalone={false} activeHighlight={statHighlight} />
+      <div className="relative z-20 -mt-10 sm:-mt-16 mb-12 sm:mb-16 w-full flex justify-center px-3 sm:px-4">
+        <div className="w-full max-w-[1280px] px-4 sm:px-6 md:px-8">
+          <StatsBento trigger={true} standalone={false} activeHighlight={statHighlight} />
+        </div>
       </div>
 
       {/* 3. Founder Legacy - The Physical "Curtain Reveal" Section */}

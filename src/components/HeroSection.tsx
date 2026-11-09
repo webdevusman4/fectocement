@@ -72,7 +72,7 @@ export const HERO_SLIDES: HeroSlide[] = [
     lines: ['Power from', 'the plant', 'itself.'],
     sub: "Kiln waste heat and on-site solar already supply nearly half of the plant's electricity.",
     primary: { label: 'See our sustainability', href: '#sustainability' },
-    secondary: { label: 'Download ESG brief', href: '/esg' },
+    // Removed non-existent secondary button (/esg target does not exist)
     media: {
       type: 'image',
       src: '/images/hero-solar.jpg',
@@ -81,7 +81,7 @@ export const HERO_SLIDES: HeroSlide[] = [
       mobilePosition: 'center center',
     },
     illustrative: true,
-    highlight: 'daily',
+    highlight: undefined, // Slide 3: highlight none
   },
   {
     id: 'story',
@@ -122,15 +122,14 @@ export interface HeroSectionProps {
 }
 
 /**
- * Fecto Cement Limited - Auto-Rotating Hero Section
+ * Fecto Cement Limited - Precision Aligned Auto-Rotating Hero Section
  * 
  * Features:
- * - 4 Rotating Curated Slides (every 10s by default)
- * - MotionValue driven timer without per-frame React state
- * - Ken Burns subtle zoom and 1.2s crossfade
- * - AnimatePresence masked typography reveals
- * - Touch pan swipe navigation & full keyboard accessibility
- * - Lazy-mount slides 2-4 to preserve LCP
+ * - Perfectly synchronized to FectoNavbar inner left guide line (<1px delta across viewports)
+ * - Fixed 3-line headline box (no vertical jumps of subline/buttons/controls between slides)
+ * - Responsive type-scale: clamp(40px, min(7.2vw, 10.5vh), 112px) with leading-[0.92]
+ * - Vertical budget handling: hides secondary buttons <720px, sub-line <640px
+ * - Split: md:grid-cols-[1.1fr_0.9fr] with centered bag and bottom-aligned portrait
  */
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onRequestQuote,
@@ -370,6 +369,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     }
   }, [canPlayVideo, activeIndex]);
 
+  // Scrim strength rule: Raise Slide 1 and Slide 3 to from-[#0A0F1F]/85
+  const leftScrimGradient =
+    currentSlide.id === 'future' || currentSlide.id === 'power'
+      ? 'bg-gradient-to-r from-[#0A0F1F]/85 via-[#0A0F1F]/40 to-transparent'
+      : 'bg-gradient-to-r from-[#0A0F1F]/75 via-[#0A0F1F]/35 to-transparent';
+
+  // Badge text: Slide 4 uses "Illustrative background"
+  const badgeText =
+    currentSlide.id === 'story' ? 'Illustrative background' : 'Illustrative image';
+
   return (
     <section
       ref={heroRef}
@@ -394,7 +403,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         onPanEnd={handlePanEnd}
       >
         {slides.map((slide, i) => {
-          // Keep slide 0 for first paint; defer 1..3 until after idle
           if (i > 0 && !mountedOthers) return null;
 
           const isActive = i === activeIndex;
@@ -481,9 +489,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         })}
       </motion.div>
 
-      {/* 2. DIRECTIONAL SCRIMS (Ensure AAA text and stat cards legibility) */}
+      {/* 2. DIRECTIONAL SCRIMS (Dynamic left scrim strength) */}
       <div
-        className="absolute inset-0 bg-gradient-to-r from-[#0A0F1F]/75 via-[#0A0F1F]/35 to-transparent pointer-events-none"
+        className={`absolute inset-0 ${leftScrimGradient} pointer-events-none transition-all duration-700`}
         aria-hidden="true"
       />
       <div
@@ -491,7 +499,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         aria-hidden="true"
       />
 
-      {/* 3. ILLUSTRATIVE BADGE CHIP */}
+      {/* 3. ILLUSTRATIVE BADGE CHIP (top = navbar bottom + 12px -> 104px) */}
       <AnimatePresence>
         {currentSlide.illustrative && (
           <motion.div
@@ -500,259 +508,283 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.3 }}
-            className="absolute right-4 top-[96px] z-30 pointer-events-none text-[11px] font-medium bg-black/40 text-white/80 rounded-full px-3 py-1 backdrop-blur-sm border border-white/10 shadow-sm"
+            className="absolute right-4 top-[104px] z-30 pointer-events-none text-[11px] font-medium bg-black/40 text-white/80 rounded-full px-3 py-1 backdrop-blur-sm border border-white/10 shadow-sm"
             aria-hidden="true"
           >
-            Illustrative image
+            {badgeText}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 4. SPLIT HERO CONTENT */}
-      <div
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className="relative z-10 w-full max-w-7xl mx-auto px-6 pt-36 pb-20 sm:pt-40 sm:pb-24 lg:pt-48 lg:pb-28"
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          
-          {/* ============================================================== */}
-          {/* LEFT COLUMN: Animated Masked Headline, Copy, Buttons, Controls */}
-          {/* ============================================================== */}
-          <div className="flex flex-col items-start text-left min-h-[380px] justify-center">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentSlide.id}
-                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
-                transition={{ duration: prefersReducedMotion ? 0.2 : 0.25, ease: 'easeOut' }}
-                className="flex flex-col items-start text-left w-full"
-                role="group"
-                aria-roledescription="slide"
-                aria-label={`${activeIndex + 1} of ${slides.length}`}
-              >
-                {/* Eyebrow */}
-                <motion.span
-                  initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: prefersReducedMotion ? 0.2 : 0.5,
-                    delay: prefersReducedMotion ? 0 : 0.6,
-                    ease: EASE,
-                  }}
-                  className="text-xs md:text-sm font-semibold tracking-widest uppercase text-[#F4D5AB] mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
-                >
-                  {currentSlide.eyebrow}
-                </motion.span>
-
-                {/* Main Headline (H1): Masked Lines */}
-                <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white leading-[1.08] mb-2 drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
-                  {currentSlide.lines.map((line, idx) => (
-                    <span key={idx} className="block overflow-hidden pb-[0.1em]">
-                      <motion.span
-                        className="inline-block"
-                        initial={prefersReducedMotion ? { opacity: 0 } : { y: '105%' }}
-                        animate={prefersReducedMotion ? { opacity: 1 } : { y: 0 }}
-                        transition={{
-                          duration: prefersReducedMotion ? 0.2 : 0.8,
-                          ease: EASE,
-                          delay: prefersReducedMotion ? 0 : 0.3 + idx * 0.08,
-                        }}
-                      >
-                        {line}
-                      </motion.span>
-                    </span>
-                  ))}
-                </h1>
-
-                {/* Sub-headline */}
-                <motion.p
-                  initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: prefersReducedMotion ? 0.2 : 0.5,
-                    delay: prefersReducedMotion ? 0 : 0.6 + currentSlide.lines.length * 0.08,
-                    ease: EASE,
-                  }}
-                  className="text-lg md:text-xl font-normal text-white/95 max-w-lg my-6 md:my-8 leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
-                >
-                  {currentSlide.sub}
-                </motion.p>
-
-                {/* Action Buttons */}
+      {/* 4. UNIFIED CONTAINER: Matches FectoNavbar pill container and inner left line */}
+      <div className="w-full flex justify-center px-3 sm:px-4 pointer-events-none">
+        <div
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className="pointer-events-auto relative z-10 w-full max-w-[1280px] px-4 sm:px-6 md:px-8 pt-[108px] pb-6 sm:pb-8 lg:pb-10"
+        >
+          {/* Split: md and up grid-cols-[1.1fr_0.9fr] */}
+          <div className="grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-12 items-center">
+            
+            {/* ============================================================== */}
+            {/* LEFT COLUMN: Fixed 3-line Headline Box, Eyebrow, CTAs, Controls */}
+            {/* ============================================================== */}
+            <div className="flex flex-col items-start text-left justify-center w-full">
+              <AnimatePresence mode="wait">
                 <motion.div
-                  initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: prefersReducedMotion ? 0.2 : 0.5,
-                    delay: prefersReducedMotion ? 0 : 0.68 + currentSlide.lines.length * 0.08,
-                    ease: EASE,
-                  }}
-                  className="flex flex-wrap items-center gap-4 pt-2"
+                  key={currentSlide.id}
+                  initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+                  transition={{ duration: prefersReducedMotion ? 0.2 : 0.25, ease: 'easeOut' }}
+                  className="flex flex-col items-start text-left w-full"
+                  role="group"
+                  aria-roledescription="slide"
+                  aria-label={`${activeIndex + 1} of ${slides.length}`}
                 >
+                  {/* Headline Box: Fixed min-height of 3 lines + eyebrow, flex flex-col justify-end */}
+                  <div
+                    className="flex flex-col justify-end w-full"
+                    style={{
+                      minHeight: 'calc(3 * 0.92em + 2.75rem)',
+                      fontSize: 'clamp(40px, min(7.2vw, 10.5vh), 112px)',
+                    }}
+                  >
+                    {/* Eyebrow inside the box above headline */}
+                    <motion.span
+                      initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: prefersReducedMotion ? 0.2 : 0.5,
+                        delay: prefersReducedMotion ? 0 : 0.6,
+                        ease: EASE,
+                      }}
+                      className="text-xs md:text-sm font-semibold tracking-widest uppercase text-[#F4D5AB] mb-3 sm:mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-sans"
+                      style={{ fontSize: '0.875rem', lineHeight: '1.25rem' }}
+                    >
+                      {currentSlide.eyebrow}
+                    </motion.span>
+
+                    {/* Main Headline (H1): clamp(40px, min(7.2vw, 10.5vh), 112px) with leading-[0.92] */}
+                    <h1
+                      className="font-bold tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
+                      style={{
+                        fontSize: 'inherit',
+                        lineHeight: '0.92',
+                      }}
+                    >
+                      {currentSlide.lines.map((line, idx) => (
+                        <span key={idx} className="block overflow-hidden pb-[0.1em]">
+                          <motion.span
+                            className="inline-block"
+                            initial={prefersReducedMotion ? { opacity: 0 } : { y: '105%' }}
+                            animate={prefersReducedMotion ? { opacity: 1 } : { y: 0 }}
+                            transition={{
+                              duration: prefersReducedMotion ? 0.2 : 0.8,
+                              ease: EASE,
+                              delay: prefersReducedMotion ? 0 : 0.3 + idx * 0.08,
+                            }}
+                          >
+                            {line}
+                          </motion.span>
+                        </span>
+                      ))}
+                    </h1>
+                  </div>
+
+                  {/* Sub-headline: clamp(15px, 1.6vw, 20px), hidden below 640px height */}
+                  <motion.p
+                    initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: prefersReducedMotion ? 0.2 : 0.5,
+                      delay: prefersReducedMotion ? 0 : 0.6 + currentSlide.lines.length * 0.08,
+                      ease: EASE,
+                    }}
+                    className="hidden [@media(min-height:640px)]:block font-normal text-white/95 max-w-lg my-4 md:my-6 leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                    style={{
+                      fontSize: 'clamp(15px, 1.6vw, 20px)',
+                    }}
+                  >
+                    {currentSlide.sub}
+                  </motion.p>
+
+                  {/* Action Buttons: Secondary hidden below 720px height */}
+                  <motion.div
+                    initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: prefersReducedMotion ? 0.2 : 0.5,
+                      delay: prefersReducedMotion ? 0 : 0.68 + currentSlide.lines.length * 0.08,
+                      ease: EASE,
+                    }}
+                    className="flex flex-wrap items-center gap-4 pt-2"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleAction(currentSlide.primary.href, currentSlide.primary.label)}
+                      className="inline-flex items-center justify-center px-8 py-3.5 sm:py-4 rounded-full text-base font-bold text-[#000080] bg-white hover:bg-white/90 transition-all duration-200 shadow-2xl hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    >
+                      {currentSlide.primary.label}
+                    </button>
+
+                    {currentSlide.secondary && (
+                      <button
+                        type="button"
+                        onClick={() => handleAction(currentSlide.secondary!.href, currentSlide.secondary!.label)}
+                        className="hidden [@media(min-height:720px)]:inline-flex items-center justify-center px-8 py-[13px] sm:py-[14px] rounded-full text-base font-semibold text-white bg-black/20 backdrop-blur-sm border-2 border-white hover:bg-white/15 transition-all duration-200 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] focus-visible:ring-offset-2 focus-visible:ring-offset-black shadow-lg"
+                      >
+                        {currentSlide.secondary.label}
+                      </button>
+                    )}
+                  </motion.div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Carousel Controls: Arrows hidden below 720px height */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-6 sm:mt-8 w-full max-w-lg">
+                {/* Segments Row */}
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  {slides.map((s, i) => {
+                    const isCompleted = i < activeIndex;
+                    const isActive = i === activeIndex;
+
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => goTo(i)}
+                        aria-label={`Go to slide ${i + 1}: ${s.lines[0]}`}
+                        className="group relative flex-1 sm:flex-none flex items-center py-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] rounded"
+                      >
+                        <div className="w-full sm:w-12 md:w-16 h-1 rounded-full bg-white/30 overflow-hidden relative">
+                          {isCompleted && (
+                            <div className="w-full h-full bg-[#F4D5AB] rounded-full" />
+                          )}
+                          {isActive && (
+                            <motion.div
+                              className="w-full h-full bg-[#F4D5AB] rounded-full origin-left"
+                              style={{ scaleX: progress }}
+                            />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Navigation Controls: Arrows hidden below 720px height */}
+                <div className="flex items-center gap-1 text-white/80">
                   <button
                     type="button"
-                    onClick={() => handleAction(currentSlide.primary.href, currentSlide.primary.label)}
-                    className="inline-flex items-center justify-center px-8 py-4 rounded-full text-base font-bold text-[#000080] bg-white hover:bg-white/90 transition-all duration-200 shadow-2xl hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    onClick={togglePlayPause}
+                    aria-label={userPaused ? 'Play slide rotation' : 'Pause slide rotation'}
+                    aria-pressed={!userPaused}
+                    className="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB]"
                   >
-                    {currentSlide.primary.label}
+                    {userPaused ? (
+                      <Play className="w-4 h-4 fill-current" />
+                    ) : (
+                      <Pause className="w-4 h-4 fill-current" />
+                    )}
                   </button>
-
-                  {currentSlide.secondary && (
-                    <button
-                      type="button"
-                      onClick={() => handleAction(currentSlide.secondary!.href, currentSlide.secondary!.label)}
-                      className="inline-flex items-center justify-center px-8 py-[14px] rounded-full text-base font-semibold text-white bg-black/20 backdrop-blur-sm border-2 border-white hover:bg-white/15 transition-all duration-200 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] focus-visible:ring-offset-2 focus-visible:ring-offset-black shadow-lg"
-                    >
-                      {currentSlide.secondary.label}
-                    </button>
-                  )}
-                </motion.div>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Carousel Controls: Segments & Play/Pause */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-8 w-full max-w-lg">
-              {/* Segments Row */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                {slides.map((s, i) => {
-                  const isCompleted = i < activeIndex;
-                  const isActive = i === activeIndex;
-
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => goTo(i)}
-                      aria-label={`Go to slide ${i + 1}: ${s.lines[0]}`}
-                      className="group relative flex-1 sm:flex-none flex items-center py-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] rounded"
-                    >
-                      <div className="w-full sm:w-12 md:w-16 h-1 rounded-full bg-white/30 overflow-hidden relative">
-                        {isCompleted && (
-                          <div className="w-full h-full bg-[#F4D5AB] rounded-full" />
-                        )}
-                        {isActive && (
-                          <motion.div
-                            className="w-full h-full bg-[#F4D5AB] rounded-full origin-left"
-                            style={{ scaleX: progress }}
-                          />
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Navigation Controls */}
-              <div className="flex items-center gap-1 text-white/80">
-                <button
-                  type="button"
-                  onClick={togglePlayPause}
-                  aria-label={userPaused ? 'Play slide rotation' : 'Pause slide rotation'}
-                  aria-pressed={!userPaused}
-                  className="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB]"
-                >
-                  {userPaused ? (
-                    <Play className="w-4 h-4 fill-current" />
-                  ) : (
-                    <Pause className="w-4 h-4 fill-current" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goTo(activeIndex - 1)}
-                  aria-label="Previous slide"
-                  className="hidden md:inline-flex p-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB]"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goTo(activeIndex + 1)}
-                  aria-label="Next slide"
-                  className="hidden md:inline-flex p-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB]"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => goTo(activeIndex - 1)}
+                    aria-label="Previous slide"
+                    className="hidden md:[@media(min-height:720px)]:inline-flex p-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB]"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => goTo(activeIndex + 1)}
+                    aria-label="Next slide"
+                    className="hidden md:[@media(min-height:720px)]:inline-flex p-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB]"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* ============================================================== */}
-          {/* RIGHT COLUMN: Foreground Element (3D Bag on S1, Founder on S4) */}
-          {/* ============================================================== */}
-          <div className="hidden md:flex justify-center lg:justify-end items-center mt-8 lg:mt-0 min-h-[480px]">
-            <AnimatePresence mode="wait">
-              {currentSlide.id === 'future' && (
-                <motion.div
-                  key="fg-future"
-                  initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 48 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, transition: { duration: 0.3 } }}
-                  transition={{
-                    duration: prefersReducedMotion ? 0.2 : 0.9,
-                    delay: prefersReducedMotion ? 0 : 0.4,
-                    ease: EASE,
-                  }}
-                  className="relative group"
-                >
-                  <div
-                    className="absolute inset-0 bg-white/10 rounded-full blur-3xl transform scale-90 pointer-events-none"
-                    aria-hidden="true"
-                  />
-                  <div className="relative z-10 drop-shadow-[0_25px_50px_rgba(0,0,0,0.85)] transition-transform duration-500 group-hover:scale-105">
-                    <video
-                      key={videoMp4Url || videoWebmUrl || 'hero-video'}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      preload="auto"
-                      className="w-auto max-w-[280px] sm:max-w-[340px] md:max-w-[400px] lg:max-w-[460px] max-h-[580px] object-contain"
-                    >
-                      {videoWebmUrl && <source src={videoWebmUrl} type="video/webm; codecs=vp9" />}
-                      {videoMp4Url && <source src={videoMp4Url} type="video/mp4" />}
-                      <Image
-                        src={bagImageUrl}
-                        alt="Fecto 50kg Portland Cement Bag"
-                        width={420}
-                        height={580}
-                        priority
-                        className="w-auto max-w-[280px] sm:max-w-[340px] md:max-w-[380px] lg:max-w-[420px] max-h-[580px] object-contain"
-                      />
-                    </video>
-                  </div>
-                </motion.div>
-              )}
-
-              {currentSlide.id === 'story' && currentSlide.foreground && (
-                <motion.div
-                  key="fg-story"
-                  initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 48 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, transition: { duration: 0.3 } }}
-                  transition={{
-                    duration: prefersReducedMotion ? 0.2 : 0.9,
-                    delay: prefersReducedMotion ? 0 : 0.4,
-                    ease: EASE,
-                  }}
-                  className="relative w-full h-[520px] flex items-end justify-center lg:justify-end"
-                >
-                  <div className="relative w-full h-full flex items-end justify-center lg:justify-end">
-                    <Image
-                      src={currentSlide.foreground.src}
-                      alt={currentSlide.foreground.alt}
-                      width={480}
-                      height={640}
-                      className="h-[78%] w-auto max-h-[460px] object-contain object-bottom drop-shadow-[0_25px_50px_rgba(0,0,0,0.95)] [mask-image:linear-gradient(to_left,black_60%,transparent)]"
+            {/* ============================================================== */}
+            {/* RIGHT COLUMN: Centered Bag (S1) or Bottom-Aligned Portrait (S4) */}
+            {/* ============================================================== */}
+            <div className="hidden md:flex justify-center items-center h-full max-h-[calc(100vh-132px)]">
+              <AnimatePresence mode="wait">
+                {currentSlide.id === 'future' && (
+                  <motion.div
+                    key="fg-future"
+                    initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 48 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, transition: { duration: 0.3 } }}
+                    transition={{
+                      duration: prefersReducedMotion ? 0.2 : 0.9,
+                      delay: prefersReducedMotion ? 0 : 0.4,
+                      ease: EASE,
+                    }}
+                    className="relative group flex items-center justify-center max-h-[78%]"
+                  >
+                    <div
+                      className="absolute inset-0 bg-white/10 rounded-full blur-3xl transform scale-90 pointer-events-none"
+                      aria-hidden="true"
                     />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                    <div className="relative z-10 drop-shadow-[0_25px_50px_rgba(0,0,0,0.85)] transition-transform duration-500 group-hover:scale-105">
+                      <video
+                        key={videoMp4Url || videoWebmUrl || 'hero-video'}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        preload="auto"
+                        className="w-auto max-w-[280px] sm:max-w-[340px] md:max-w-[380px] lg:max-w-[440px] max-h-[min(540px,78vh)] object-contain"
+                      >
+                        {videoWebmUrl && <source src={videoWebmUrl} type="video/webm; codecs=vp9" />}
+                        {videoMp4Url && <source src={videoMp4Url} type="video/mp4" />}
+                        <Image
+                          src={bagImageUrl}
+                          alt="Fecto 50kg Portland Cement Bag"
+                          width={420}
+                          height={580}
+                          priority
+                          className="w-auto max-w-[280px] sm:max-w-[340px] md:max-w-[360px] lg:max-w-[400px] max-h-[min(540px,78vh)] object-contain"
+                        />
+                      </video>
+                    </div>
+                  </motion.div>
+                )}
 
+                {/* Slide 2 & 3: Visual removed per instructions */}
+
+                {currentSlide.id === 'story' && currentSlide.foreground && (
+                  <motion.div
+                    key="fg-story"
+                    initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 48 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, transition: { duration: 0.3 } }}
+                    transition={{
+                      duration: prefersReducedMotion ? 0.2 : 0.9,
+                      delay: prefersReducedMotion ? 0 : 0.4,
+                      ease: EASE,
+                    }}
+                    className="relative w-full h-[520px] max-h-[min(540px,78vh)] flex items-end justify-center lg:justify-end"
+                  >
+                    <div className="relative w-full h-full flex items-end justify-center lg:justify-end">
+                      <Image
+                        src={currentSlide.foreground.src}
+                        alt={currentSlide.foreground.alt}
+                        width={480}
+                        height={640}
+                        className="h-[78%] w-auto max-h-[460px] object-contain object-bottom drop-shadow-[0_25px_50px_rgba(0,0,0,0.95)] [mask-image:linear-gradient(to_left,black_60%,transparent)]"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+          </div>
         </div>
       </div>
     </section>

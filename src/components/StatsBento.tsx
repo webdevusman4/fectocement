@@ -84,14 +84,15 @@ export default function StatsBento({
   activeHighlight,
 }: StatsBentoProps) {
   const wrapperClass = standalone
-    ? `relative z-10 mx-auto -mt-20 max-w-7xl p-8 ${className}`
-    : `relative z-10 mx-auto max-w-7xl w-full ${className}`;
+    ? `relative z-10 mx-auto -mt-20 max-w-[1280px] p-8 ${className}`
+    : `relative z-10 w-full ${className}`;
 
   return (
     <section data-tone="light" className={wrapperClass}>
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:grid-cols-4">
         {STATS.map((s, i) => {
           const isHighlighted = activeHighlight === s.key;
+          const isFirst = i === 0;
 
           return (
             <motion.div
@@ -101,6 +102,8 @@ export default function StatsBento({
               viewport={{ once: true, margin: "-5%" }}
               transition={{ duration: 0.5, delay: i * 0.06 }}
               className={`glass-arctic rounded-2xl sm:rounded-3xl p-3 sm:p-4 lg:p-5 transition-all duration-[600ms] ${
+                isFirst ? "-ml-3 sm:-ml-4 lg:-ml-5" : ""
+              } ${
                 isHighlighted
                   ? "ring-1 ring-[#F4D5AB]/70 shadow-[0_0_40px_rgba(244,213,171,0.25)]"
                   : ""

@@ -17,6 +17,10 @@ export default function HomeVariantSwitcher({
   onVariantChange,
   className = '',
 }: HomeVariantSwitcherProps) {
+  if (process.env.NODE_ENV === 'production') {
+    return null;
+  }
+
   const [isMinimized, setIsMinimized] = useState(false);
 
   const getVariantLabel = (variant: HomeVariant) => {
