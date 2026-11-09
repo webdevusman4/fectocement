@@ -329,26 +329,56 @@ export default function PlantAnatomy({
   // Section progress during pinning: start start -> end end
   const p = useSectionProgress(outerRef, 'pin');
 
+  // Normalized iris opening progress q (0 -> 1 over p from 0 to 0.1)
+  const q = useTransform(p, (v) => Math.min(1, Math.max(0, v / 0.1)));
+
   // Iris opening style for pinned mode: window expands from inset(12svh 8vw round 32px) to 0
-  const irisClipPath = useTransform(p, (v) => {
-    const q = Math.min(1, Math.max(0, v / 0.1));
-    const svh = (1 - q) * 12;
-    const vw = (1 - q) * 8;
-    const rad = (1 - q) * 32;
+  const irisClipPath = useTransform(q, (val) => {
+    const svh = (1 - val) * 12;
+    const vw = (1 - val) * 8;
+    const rad = (1 - val) * 32;
     return `inset(${svh}svh ${vw}vw round ${rad}px)`;
   });
 
   // HUD opacity: fades in from 0 to 1 as q moves from 0.75 to 1.0 (p between 0.075 and 0.1)
-  const hudOpacity = useTransform(p, (v) => {
-    const q = Math.min(1, Math.max(0, v / 0.1));
-    return Math.min(1, Math.max(0, (q - 0.75) * 4));
+  const hudOpacity = useTransform(q, (val) => {
+    return Math.min(1, Math.max(0, (val - 0.75) * 4));
   });
+
+  // Ambient layer & frame ring opacity: fades out 1 -> 0 as iris window expands (q goes 0 -> 1)
+  const ambientOpacity = useTransform(q, (v) => 1 - v);
+
+  // Frame ring transforms driven with transform only (scaleX, scaleY matching the clipped window):
+  // scaleX = 1 - (1 - q) * 2 * insetVw / 100 with insetVw = 8
+  // scaleY = 1 - (1 - q) * 2 * insetSvh / 100 with insetSvh = 12
+  const ringScaleX = useTransform(q, (v) => 1 - (1 - v) * ((2 * 8) / 100));
+  const ringScaleY = useTransform(q, (v) => 1 - (1 - v) * ((2 * 12) / 100));
 
   const isReduced = Boolean(useReducedMotion());
   const isInView = useInView(stageRef, { amount: 0.5 });
 
   const [stageSize, setStageSize] = useState({ vw: 1280, vh: 720 });
   const [isMobile, setIsMobile] = useState(false);
+  const [ambientOn, setAmbientOn] = useState<boolean>(true);
+  const ambientOnRef = useRef<boolean>(true);
+
+  // Toggle ambient and frame ring mount with ONE boolean state only when q crosses 0.999
+  useMotionValueEvent(q, 'change', (v) => {
+    const shouldBeOn = v < 0.999;
+    if (shouldBeOn !== ambientOnRef.current) {
+      ambientOnRef.current = shouldBeOn;
+      setAmbientOn(shouldBeOn);
+    }
+  });
+
+  useEffect(() => {
+    if (q.get() >= 0.999) {
+      ambientOnRef.current = false;
+      setAmbientOn(false);
+    }
+  }, [q]);
+
+  const showAmbient = isPinned && !isMobile && !isReduced && ambientOn;
   const [activeNodeId, setActiveNodeId] = useState<string>(() => initialNodeId || nodes[0]?.id || 'overview');
   const activeNodeIdRef = useRef<string>(activeNodeId);
   const [isTouring, setIsTouring] = useState(false);
@@ -599,20 +629,57 @@ export default function PlantAnatomy({
     <div
       ref={outerRef}
       id="plant-anatomy"
-      className={`${Z.plant} relative rounded-t-[40px] -mt-10 shadow-[0_-20px_60px_rgba(0,0,60,0.25)] ${className}`}
+      className={`${Z.plant} relative bg-slate-50 rounded-t-[40px] -mt-10 shadow-[0_-20px_60px_rgba(0,0,60,0.25)] ${className}`}
       style={isPinned ? { height: `calc(100svh + ${40 + nodes.length * 35}svh)` } : undefined}
     >
       <section
         data-tone="dark"
         aria-label="Plant anatomy"
-        className={`h-[100svh] min-h-[640px] w-full select-none overflow-hidden bg-[#000080] rounded-t-[40px] relative isolate text-white ${
+        className={`h-[100svh] min-h-[640px] w-full select-none overflow-hidden bg-[#0B1245] rounded-t-[40px] relative isolate text-white ${
           isPinned ? 'sticky top-0' : ''
         }`}
       >
+        {/* Ambient Layer: calm, layered aerial echo around the unexpanded iris window */}
+        {showAmbient && (
+          <motion.div
+            aria-hidden="true"
+            style={{ opacity: ambientOpacity }}
+            className="pointer-events-none absolute inset-0 z-0 overflow-hidden will-change-[opacity]"
+          >
+            {!imageError && (
+              <Image
+                src={imageSrc}
+                alt=""
+                fill
+                quality={40}
+                sizes="40vw"
+                draggable={false}
+                className="scale-110 object-cover blur-2xl saturate-[0.35] brightness-[0.6]"
+              />
+            )}
+            <div className="absolute inset-0 bg-[#0B1245]/[0.82]" />
+            <div className="absolute inset-0 [background:radial-gradient(ellipse_at_50%_55%,rgba(0,0,128,0.55),transparent_65%)]" />
+            <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_45%,rgba(10,15,31,0.85)_100%)]" />
+          </motion.div>
+        )}
+
+        {/* Frame Ring: elevated border and glow matching the expanding iris window */}
+        {showAmbient && (
+          <motion.div
+            aria-hidden="true"
+            style={{
+              scaleX: ringScaleX,
+              scaleY: ringScaleY,
+              opacity: ambientOpacity,
+            }}
+            className="pointer-events-none absolute inset-0 z-[1] origin-center rounded-[32px] border border-[#F4D5AB]/35 shadow-[0_30px_80px_rgba(0,0,40,0.55),0_0_120px_rgba(0,0,128,0.45)] will-change-transform"
+          />
+        )}
+
         {/* Stage & HUD Iris container: clips like a window in pinned mode */}
         <motion.div
           style={isPinned ? { clipPath: irisClipPath } : undefined}
-          className="absolute inset-0 overflow-hidden"
+          className="absolute inset-0 z-[2] overflow-hidden"
         >
           {/* Stage: the drone canvas */}
           <motion.div
@@ -703,10 +770,12 @@ export default function PlantAnatomy({
             </motion.div>
 
             {/* Parallax fog, scrims, vignette */}
-            <motion.div aria-hidden="true" style={{ x: fogX, y: fogY }} className="pointer-events-none absolute -inset-[10%] z-10 bg-gradient-to-tr from-[#F4D5AB]/[0.06] to-[#000080]/20" />
+            <motion.div aria-hidden="true" style={{ x: fogX, y: fogY }} className="pointer-events-none absolute -inset-[10%] z-10 bg-gradient-to-tr from-[#F4D5AB]/[0.06] to-[#0B1245]/20" />
             <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 z-10 hidden w-[45%] bg-gradient-to-r from-[#0A0F1F]/70 via-[#0A0F1F]/15 to-transparent md:block" />
             <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[60%] bg-gradient-to-t from-[#0A0F1F]/90 via-[#0A0F1F]/30 to-transparent md:hidden" />
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(10,15,31,0.6)_100%)]" />
+            {/* Bottom handoff band: ends on flat Midnight #0B1245 for the last 12svh */}
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[12svh] bg-gradient-to-t from-[#0B1245] to-transparent" />
           </motion.div>
 
           {isDebug && (

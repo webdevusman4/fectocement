@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import HeroSection from '@/components/HeroSection';
+import HeroSection, { StatKey } from '@/components/HeroSection';
 import StatsBento from '@/components/StatsBento';
 import FounderLegacy from '@/components/FounderLegacy';
 import CompanyHistory from '@/components/CompanyHistory';
@@ -32,6 +32,8 @@ interface SampleHomeV3ContentProps {
 export default function SampleHomeV3Content({
   onRequestQuote,
 }: SampleHomeV3ContentProps) {
+  const [statHighlight, setStatHighlight] = React.useState<StatKey | undefined>('capacity');
+
   return (
     <div className="relative isolate">
       {/* 1. First Home Page Hero Section (Crystal Clear Background + 3D Looping Video Bag) */}
@@ -41,6 +43,7 @@ export default function SampleHomeV3Content({
           const el = document.getElementById('products');
           if (el) el.scrollIntoView({ behavior: 'smooth' });
         }}
+        onActiveHighlightChange={setStatHighlight}
         backgroundImageUrl="/herobg.jpg"
         bagImageUrl="/fecto-50kg-bag.png"
         videoWebmUrl="/Untitled design.webm"
@@ -49,7 +52,7 @@ export default function SampleHomeV3Content({
 
       {/* 2. Stats Bento Section */}
       <div className="relative z-20 -mt-10 sm:-mt-16 mb-12 sm:mb-16 px-4 sm:px-6">
-        <StatsBento trigger={true} standalone={false} />
+        <StatsBento trigger={true} standalone={false} activeHighlight={statHighlight} />
       </div>
 
       {/* 3. Founder Legacy - Enhanced V3 with Founder Quote & Full History Link */}

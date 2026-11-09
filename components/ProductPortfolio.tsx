@@ -9,6 +9,7 @@ import {
   useTransform,
   useSpring,
   useReducedMotion,
+  useScroll,
   animate,
 } from 'framer-motion';
 import { ShieldCheck, Download, ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -58,7 +59,12 @@ export interface ProductPortfolioProps {
   onDownloadSpec?: (productName: string) => void;
   className?: string;
   showSampleNote?: boolean;
+  bgSrc?: string;
+  showBackdrop?: boolean;
 }
+
+const GRAIN_DATA_URI =
+  "data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E";
 
 // SAMPLE VALUES: replace with Fecto's technical data sheet before launch
 export const SPECS: Record<ProductGrade, GradeData> = {
@@ -154,10 +160,13 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
   onDownloadSpec,
   className = '',
   showSampleNote = true,
+  bgSrc = '/images/product-bg.jpg',
+  showBackdrop = true,
 }) => {
   const sectionRef = useRef<HTMLElement>(null);
   const [activeGrade, setActiveGrade] = useState<ProductGrade>('opc');
   const [imageError, setImageError] = useState(false);
+  const [bgImageError, setBgImageError] = useState(false);
 
   const reducedMotion = useReducedMotion();
   const isReduced = Boolean(reducedMotion);
@@ -165,6 +174,13 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
 
   // Entrance scroll progress: start end -> start start
   const enter = useSectionProgress(sectionRef, 'enter');
+
+  // Background Parallax scroll progress: start end -> end start
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'end start'],
+  });
+  const bgParallaxY = useTransform(scrollYProgress, [0, 1], ['-4%', '4%']);
 
   // Scrubbed entrance transforms (md and up)
   const bagY = useTransform(enter, (v) => (1 - v) * 140);
@@ -262,33 +278,87 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
       aria-label="Precision Portfolio"
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
-      className={`relative w-full min-h-[100svh] bg-[#000080] text-white overflow-hidden flex flex-col items-center justify-center [border-radius:50%_50%_0_0/90px_90px_0_0] -mt-[90px] ${Z.product} pt-[170px] md:pt-[202px] pb-20 md:pb-28 select-none ${className}`}
+      className={`relative isolate w-full min-h-[100svh] bg-[#0B1245] text-white overflow-hidden flex flex-col items-center justify-center [border-radius:50%_50%_0_0/90px_90px_0_0] -mt-[90px] ${Z.product} pt-[170px] md:pt-[202px] pb-20 md:pb-28 select-none ${className}`}
     >
       {/* ==================================================================== */}
-      {/* 1. CINEMATIC BACKGROUND GLOW & ATMOSPHERE                            */}
+      {/* 1. LAYERED STUDIO BACKDROP (OR FLAT MIDNIGHT FALLBACK)               */}
       {/* ==================================================================== */}
-      
-      {/* Radial glow centered behind the bag */}
-      <div
-        aria-hidden="true"
-        style={{
-          background:
-            'radial-gradient(circle at 50% 55%, #1A1AA0 0%, #000080 55%, #00005A 100%)',
-        }}
-        className="absolute inset-0 pointer-events-none z-0"
-      />
+      {showBackdrop ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+        >
+          {/* a) Image Layer with subtle vertical parallax drift on desktop */}
+          {!isReduced && !simple ? (
+            <motion.div
+              style={{ y: bgParallaxY }}
+              className="absolute -inset-y-[6%] inset-x-0 overflow-hidden"
+            >
+              {bgImageError ? (
+                <div className="absolute inset-0 bg-[#0B1245] bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:48px_48px]" />
+              ) : (
+                <Image
+                  src={bgSrc}
+                  alt=""
+                  fill
+                  sizes="100vw"
+                  quality={60}
+                  onError={() => setBgImageError(true)}
+                  className="object-cover grayscale contrast-[1.05]"
+                />
+              )}
+            </motion.div>
+          ) : (
+            <div className="absolute inset-0 overflow-hidden">
+              {bgImageError ? (
+                <div className="absolute inset-0 bg-[#0B1245] bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:48px_48px]" />
+              ) : (
+                <Image
+                  src={bgSrc}
+                  alt=""
+                  fill
+                  sizes="100vw"
+                  quality={55}
+                  onError={() => setBgImageError(true)}
+                  className="object-cover grayscale contrast-[1.05]"
+                />
+              )}
+            </div>
+          )}
 
-      {/* Atmospheric Overhead Light Cone */}
-      <div
-        aria-hidden="true"
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] md:w-[900px] h-[380px] bg-gradient-to-b from-white/[0.08] via-white/[0.02] to-transparent blur-3xl pointer-events-none rounded-full z-0"
-      />
+          {/* b) Tint overlay */}
+          <div className="absolute inset-0 bg-[#0B1245]/[0.80]" />
 
-      {/* Subtle Atmospheric Grid Mesh */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 opacity-[0.04] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none z-0"
-      />
+          {/* c) Royal glow */}
+          <div className="absolute inset-0 [background:radial-gradient(ellipse_at_50%_55%,rgba(0,0,128,0.55),transparent_65%)]" />
+
+          {/* d) Sand spotlight behind the bag */}
+          <div className="absolute inset-0 [background:radial-gradient(ellipse_40%_45%_at_50%_52%,rgba(244,213,171,0.14),transparent_70%)]" />
+
+          {/* e) Edge vignette to Deep */}
+          <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_45%,rgba(10,15,31,0.85)_100%)]" />
+
+          {/* f) Static inline SVG feTurbulence grain */}
+          <div
+            className="absolute inset-0 opacity-[0.035] mix-blend-overlay pointer-events-none"
+            style={{ backgroundImage: `url("${GRAIN_DATA_URI}")` }}
+          />
+
+          {/* g) Seam bands: top band to Midnight & bottom band to Midnight */}
+          <div className="absolute top-0 inset-x-0 h-[14svh] bg-gradient-to-b from-[#0B1245] to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 inset-x-0 h-[18svh] bg-gradient-to-t from-[#0B1245] to-transparent pointer-events-none" />
+        </div>
+      ) : (
+        /* Flat Midnight legacy look */
+        <div
+          aria-hidden="true"
+          style={{
+            background:
+              'radial-gradient(circle at 50% 55%, #1A1AA0 0%, #0B1245 55%, #0A0F1F 100%)',
+          }}
+          className="absolute inset-0 pointer-events-none z-0"
+        />
+      )}
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex flex-col items-center">
         
@@ -472,6 +542,12 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                 }
                 className="relative flex flex-col items-center"
               >
+                {/* Floor glow: soft sand pool directly under the bag and above the pedestal shadow */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 w-[420px] h-[70px] max-w-[80%] [background:radial-gradient(ellipse_at_center,rgba(244,213,171,0.20),transparent_70%)]"
+                />
+
                 {/* Bag Pedestal Floor Glow & Shadow */}
                 <motion.div
                   aria-hidden="true"
@@ -599,7 +675,7 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                     animate={{ opacity: 1, x: 0 }}
                     exit={isReduced ? undefined : { opacity: 0, x: -10 }}
                     transition={{ duration: 0.35 }}
-                    className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
+                    className="bg-[#0A0F1F]/40 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB] font-semibold">
@@ -647,7 +723,7 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                     animate={{ opacity: 1, x: 0 }}
                     exit={isReduced ? undefined : { opacity: 0, x: 10 }}
                     transition={{ duration: 0.35 }}
-                    className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
+                    className="bg-[#0A0F1F]/40 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB] font-semibold">
@@ -695,7 +771,7 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                     animate={{ opacity: 1, x: 0 }}
                     exit={isReduced ? undefined : { opacity: 0, x: -10 }}
                     transition={{ duration: 0.35 }}
-                    className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
+                    className="bg-[#0A0F1F]/40 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-5 w-64 hover:border-white/35 transition-colors"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB] font-semibold">
@@ -785,7 +861,7 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                   initial={isReduced ? false : { opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay: i * 0.08 }}
-                  className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-lg"
+                  className="bg-[#0A0F1F]/40 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-lg"
                 >
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="font-mono text-xs uppercase tracking-widest text-[#F4D5AB]">
@@ -871,11 +947,11 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
       </div>
 
       {/* ==================================================================== */}
-      {/* 6. BOTTOM BAND: FLAT NAVY FINISH (FOR SUSTAINABILITY DOORS)          */}
+      {/* 6. BOTTOM BAND: FLAT MIDNIGHT FINISH (FOR SUSTAINABILITY DOORS)      */}
       {/* ==================================================================== */}
       <div
         aria-hidden="true"
-        className="absolute bottom-0 inset-x-0 h-[20svh] bg-gradient-to-t from-[#000080] to-transparent pointer-events-none z-10"
+        className="absolute bottom-0 inset-x-0 h-[18svh] bg-gradient-to-t from-[#0B1245] to-transparent pointer-events-none z-10"
       />
     </section>
   );
