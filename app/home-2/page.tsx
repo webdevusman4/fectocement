@@ -1,7 +1,7 @@
 'use client';
 
-import SampleHomePage from '../sample-home/page';
+import Home2Page from '../home2/page';
 
-export default function Home2Page() {
-  return <SampleHomePage />;
+export default function HomeDash2Page() {
+  return <Home2Page />;
 }

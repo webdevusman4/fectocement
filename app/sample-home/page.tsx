@@ -4,11 +4,10 @@ import React, { useState } from 'react';
 import FectoNavbar from '@/components/FectoNavbar';
 import QuoteModal from '@/components/QuoteModal';
 import SampleHomeContent from '@/components/SampleHomeContent';
-import HomeVariantSwitcher from '@/components/HomeVariantSwitcher';
 
 export default function SampleHomePage() {
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<string>('');
+  const [, setSelectedProduct] = useState<string>('');
 
   const handleOpenQuote = (productName?: string) => {
     if (productName) {
@@ -30,10 +29,6 @@ export default function SampleHomePage() {
         isOpen={quoteModalOpen}
         onClose={() => setQuoteModalOpen(false)}
       />
-
-      {/* 4. Home Experience Switcher Pill */}
-      <HomeVariantSwitcher activeVariant="v2" />
     </main>
   );
 }
-
