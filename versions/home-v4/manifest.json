@@ -1,0 +1,241 @@
+{
+  "name": "home-v4 baseline",
+  "sourceCommit": "086fd68909eccb44cbc9094ada726eea555b4e01",
+  "sourceRoute": "/",
+  "liveRoute": "/home-v4",
+  "sourceOfTruth": "src/components/* (tsconfig resolves @/* to ./src/* before ./*)",
+  "copiedFileCount": 87,
+  "publicFileCount": 42,
+  "publicBytes": 70265267,
+  "assets": [
+    {
+      "url": "/Gemini_Generated_Image_1jfr2q1jfr2q1jfr.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/Untitled design.mp4",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/Untitled design.webm",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/fecto-50kg-bag.png",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/fecto-logo.svg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/herobg.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/bag-opc.png",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/bag-src.png",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/careers-team.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/contractors-infra.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/dealers-warehouse.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/founder-bg.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/founder-portrait.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/hero-heritage.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/hero-solar.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/Gemini_Generated_Image_o7oskto7oskto7os.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/Gemini_Generated_Image_s6vce0s6vce0s6vc.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/Gemini_Generated_Image_sntfe6sntfe6sntf.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/future-primary-eco.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/future-secondary-whr.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/history-industrialization.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/history-legacy.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/history-scale-plant.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/history-toshiba.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/vintage-blueprints.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/history/vintage-tractor-assembly.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/investors-towers.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/product-bg.jpg",
+      "existsInCopiedPublic": false
+    },
+    {
+      "url": "/images/project-towers.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/sangjani-aerial.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/images/sustainability-energy.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/placeholders/1940s-street.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/placeholders/old-assembly-line.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/placeholders/vintage-ledger.jpg",
+      "existsInCopiedPublic": true
+    },
+    {
+      "url": "/tarbala.jpg",
+      "existsInCopiedPublic": true
+    }
+  ],
+  "files": [
+    "app/page.tsx -> source/page.tsx",
+    "app/layout.tsx -> source/layout.tsx",
+    "app/globals.css -> source/globals.css",
+    "app/home-1/page.tsx -> source/routes/home-1/page.tsx",
+    "app/home-2/page.tsx -> source/routes/home-2/page.tsx",
+    "app/home1/page.tsx -> source/routes/home1/page.tsx",
+    "app/home2/page.tsx -> source/routes/home2/page.tsx",
+    "app/sample-home/page.tsx -> source/routes/sample-home/page.tsx",
+    "app/sample-v3/page.tsx -> source/routes/sample-v3/page.tsx",
+    "src/components/CareersNewsDropdown.tsx -> source/components/CareersNewsDropdown.tsx",
+    "src/components/CompanyDropdown.tsx -> source/components/CompanyDropdown.tsx",
+    "src/components/CompanyHistory.tsx -> source/components/CompanyHistory.tsx",
+    "src/components/CorporateFooter.tsx -> source/components/CorporateFooter.tsx",
+    "src/components/FectoLogo.tsx -> source/components/FectoLogo.tsx",
+    "src/components/FectoNavbar.tsx -> source/components/FectoNavbar.tsx",
+    "src/components/FounderLegacy.tsx -> source/components/FounderLegacy.tsx",
+    "src/components/HeroSection.tsx -> source/components/HeroSection.tsx",
+    "src/components/HomeVariantSwitcher.tsx -> source/components/HomeVariantSwitcher.tsx",
+    "src/components/IconicProjects.tsx -> source/components/IconicProjects.tsx",
+    "src/components/InnerPageHero.tsx -> source/components/InnerPageHero.tsx",
+    "src/components/InvestorsDropdown.tsx -> source/components/InvestorsDropdown.tsx",
+    "src/components/LegacyHomeV1Content.tsx -> source/components/LegacyHomeV1Content.tsx",
+    "src/components/MobileMenu.tsx -> source/components/MobileMenu.tsx",
+    "src/components/OurStory.tsx -> source/components/OurStory.tsx",
+    "src/components/PlantAnatomy.tsx -> source/components/PlantAnatomy.tsx",
+    "src/components/ProductPortfolio.tsx -> source/components/ProductPortfolio.tsx",
+    "src/components/ProductsDropdown.tsx -> source/components/ProductsDropdown.tsx",
+    "src/components/QuoteModal.tsx -> source/components/QuoteModal.tsx",
+    "src/components/SampleHomeContent.tsx -> source/components/SampleHomeContent.tsx",
+    "src/components/SampleHomeV3Content.tsx -> source/components/SampleHomeV3Content.tsx",
+    "src/components/SmoothScroll.tsx -> source/components/SmoothScroll.tsx",
+    "src/components/StakeholderRoutingGrid.tsx -> source/components/StakeholderRoutingGrid.tsx",
+    "src/components/StatsBento.tsx -> source/components/StatsBento.tsx",
+    "src/components/SustainabilitySection.tsx -> source/components/SustainabilitySection.tsx",
+    "src/hooks/useMotionPrefs.ts -> source/hooks/useMotionPrefs.ts",
+    "src/hooks/useSectionProgress.ts -> source/hooks/useSectionProgress.ts",
+    "src/lib/motion.ts -> source/lib/motion.ts",
+    "package.json -> config/package.json",
+    "package-lock.json -> config/package-lock.json",
+    "next.config.mjs -> config/next.config.mjs",
+    "postcss.config.js -> config/postcss.config.js",
+    "tailwind.config.js -> config/tailwind.config.js",
+    "tsconfig.json -> config/tsconfig.json",
+    "README.md -> config/README.original.md",
+    "docs/motion-rules.md -> docs/motion-rules.md",
+    "public/Gemini_Generated_Image_1jfr2q1jfr2q1jfr.jpg -> public/Gemini_Generated_Image_1jfr2q1jfr2q1jfr.jpg",
+    "public/Untitled design.mp4 -> public/Untitled design.mp4",
+    "public/Untitled design.webm -> public/Untitled design.webm",
+    "public/fecto-50kg-bag.png -> public/fecto-50kg-bag.png",
+    "public/fecto-bag-transparent.webm -> public/fecto-bag-transparent.webm",
+    "public/fecto-bag.mp4 -> public/fecto-bag.mp4",
+    "public/fecto-logo.svg -> public/fecto-logo.svg",
+    "public/herobg.jpg -> public/herobg.jpg",
+    "public/images/bag-opc.png -> public/images/bag-opc.png",
+    "public/images/bag-src.png -> public/images/bag-src.png",
+    "public/images/careers-team.jpg -> public/images/careers-team.jpg",
+    "public/images/company-hq.jpg -> public/images/company-hq.jpg",
+    "public/images/company-plant.jpg -> public/images/company-plant.jpg",
+    "public/images/contractors-infra.jpg -> public/images/contractors-infra.jpg",
+    "public/images/dealers-warehouse.jpg -> public/images/dealers-warehouse.jpg",
+    "public/images/founder-bg.jpg -> public/images/founder-bg.jpg",
+    "public/images/founder-portrait.jpg -> public/images/founder-portrait.jpg",
+    "public/images/hero-heritage.jpg -> public/images/hero-heritage.jpg",
+    "public/images/hero-skyline.jpg -> public/images/hero-skyline.jpg",
+    "public/images/hero-solar.jpg -> public/images/hero-solar.jpg",
+    "public/images/history/Gemini_Generated_Image_o7oskto7oskto7os.jpg -> public/images/history/Gemini_Generated_Image_o7oskto7oskto7os.jpg",
+    "public/images/history/Gemini_Generated_Image_s6vce0s6vce0s6vc.jpg -> public/images/history/Gemini_Generated_Image_s6vce0s6vce0s6vc.jpg",
+    "public/images/history/Gemini_Generated_Image_sntfe6sntfe6sntf.jpg -> public/images/history/Gemini_Generated_Image_sntfe6sntfe6sntf.jpg",
+    "public/images/history/future-primary-eco.jpg -> public/images/history/future-primary-eco.jpg",
+    "public/images/history/future-secondary-whr.jpg -> public/images/history/future-secondary-whr.jpg",
+    "public/images/history/history-industrialization.jpg -> public/images/history/history-industrialization.jpg",
+    "public/images/history/history-legacy.jpg -> public/images/history/history-legacy.jpg",
+    "public/images/history/history-scale-plant.jpg -> public/images/history/history-scale-plant.jpg",
+    "public/images/history/history-toshiba.jpg -> public/images/history/history-toshiba.jpg",
+    "public/images/history/vintage-blueprints.jpg -> public/images/history/vintage-blueprints.jpg",
+    "public/images/history/vintage-tractor-assembly.jpg -> public/images/history/vintage-tractor-assembly.jpg",
+    "public/images/investors-towers.jpg -> public/images/investors-towers.jpg",
+    "public/images/project-towers.jpg -> public/images/project-towers.jpg",
+    "public/images/sangjani-aerial.jpg -> public/images/sangjani-aerial.jpg",
+    "public/images/sustainability-energy.jpg -> public/images/sustainability-energy.jpg",
+    "public/media/sangjani-plant.mp4 -> public/media/sangjani-plant.mp4",
+    "public/placeholders/1940s-street.jpg -> public/placeholders/1940s-street.jpg",
+    "public/placeholders/old-assembly-line.jpg -> public/placeholders/old-assembly-line.jpg",
+    "public/placeholders/vintage-ledger.jpg -> public/placeholders/vintage-ledger.jpg",
+    "public/tarbala.jpg -> public/tarbala.jpg",
+    "public/untitled-design.mp4 -> public/untitled-design.mp4",
+    "public/untitled-design.webm -> public/untitled-design.webm"
+  ]
+}
