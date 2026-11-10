@@ -731,26 +731,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                       aria-hidden="true"
                     />
                     <div className="relative z-10 drop-shadow-[0_25px_50px_rgba(0,0,0,0.85)] transition-transform duration-500 group-hover:scale-105">
-                      <video
-                        key={videoMp4Url || videoWebmUrl || 'hero-video'}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        preload="auto"
+                      <Image
+                        src={bagImageUrl}
+                        alt="Fecto 50kg Portland Cement Bag"
+                        width={420}
+                        height={580}
+                        priority
                         className="w-auto max-w-[280px] sm:max-w-[340px] md:max-w-[380px] lg:max-w-[440px] max-h-[min(540px,78vh)] object-contain"
-                      >
-                        {videoWebmUrl && <source src={videoWebmUrl} type="video/webm; codecs=vp9" />}
-                        {videoMp4Url && <source src={videoMp4Url} type="video/mp4" />}
-                        <Image
-                          src={bagImageUrl}
-                          alt="Fecto 50kg Portland Cement Bag"
-                          width={420}
-                          height={580}
-                          priority
-                          className="w-auto max-w-[280px] sm:max-w-[340px] md:max-w-[360px] lg:max-w-[400px] max-h-[min(540px,78vh)] object-contain"
-                        />
-                      </video>
+                      />
                     </div>
                   </motion.div>
                 )}
