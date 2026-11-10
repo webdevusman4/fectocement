@@ -1,0 +1,368 @@
+{
+  "name": "home-v4.3 \u2014 executive restraint + full remediation",
+  "baseVersion": "versions/home-v4-2",
+  "liveRoute": "/home-v4-3",
+  "scope": "Full V4.3 homepage composition: motion, interactions, capture behavior, accessibility, sample-data clarity, and preview config",
+  "productionRouteUnchanged": true,
+  "priorVersionsUnchanged": true,
+  "approvedDirection": "Option A \u2014 Executive restraint",
+  "routeMetadata": {
+    "title": "Home V4.3 \u2014 mock design preview",
+    "description": "Isolated executive-restraint homepage mock for layout, motion, and interaction review."
+  },
+  "screenshotSafeFlag": "source/components/SampleHomeV3Content.tsx :: SCREENSHOT_SAFE_MODE = false; passed as staticReveal to all ten V4.3 sections",
+  "changedFiles": [
+    {
+      "path": "source/components/CareersNewsDropdown.tsx",
+      "sha256": "6126e6e0c988bad1d425d8f679d03736d9b83596dbb1050f25d50b55883e1d6a",
+      "bytes": 12368
+    },
+    {
+      "path": "source/components/CompanyDropdown.tsx",
+      "sha256": "50ca917cd572c8e865277b2b7ff1a66a98ac39cc6f2f4c27e4dcb29fccb7e1ca",
+      "bytes": 15897
+    },
+    {
+      "path": "source/components/CompanyHistory.tsx",
+      "sha256": "3e8ac262373bcadb34252dd9ccc4663a5e7e83c4392efdc97fce1cfd0af8c19c",
+      "bytes": 28469
+    },
+    {
+      "path": "source/components/CorporateFooter.tsx",
+      "sha256": "bcd4bdd3c51add85cf536c3da3d2b4da259b79a48b560dde69444b36c6ac3e8c",
+      "bytes": 22786
+    },
+    {
+      "path": "source/components/FectoNavbar.tsx",
+      "sha256": "baf03eaace93128015d9c419f1dc3adb1e812b2abc4837f31e69bbdfc5d5aebc",
+      "bytes": 17295
+    },
+    {
+      "path": "source/components/FounderLegacy.tsx",
+      "sha256": "2f047551a873bba87c8cc516814f7a00c67bd1e39097e549a960f3df9ff3725f",
+      "bytes": 20261
+    },
+    {
+      "path": "source/components/HeroSection.tsx",
+      "sha256": "314775b6e23bce59d6345ad55587679ce3136cdfd38846e74ae922cd6e5093d5",
+      "bytes": 30354
+    },
+    {
+      "path": "source/components/HomeVariantSwitcher.tsx",
+      "sha256": "22e2d6816c807761366a66476b680a9bc87ffaf48229d1e51688f9dd82a33106",
+      "bytes": 8971
+    },
+    {
+      "path": "source/components/IconicProjects.tsx",
+      "sha256": "e528535dbb0bff7f03450b4978d057a35a6da5afc6062fc540acdc9de2a3b0db",
+      "bytes": 8340
+    },
+    {
+      "path": "source/components/InvestorsDropdown.tsx",
+      "sha256": "d94ac3acf9a3e363b324eff6d7748803486671d02673e47d3effcbf0fad8d419",
+      "bytes": 13020
+    },
+    {
+      "path": "source/components/MobileMenu.tsx",
+      "sha256": "d93ae4a4aab793fa7801e26b6a9d8b0390a026663419bb808e2e736934cac9c2",
+      "bytes": 16332
+    },
+    {
+      "path": "source/components/OurStory.tsx",
+      "sha256": "8f93ead2ea7b83c73e7c15f54995b097872f677efc0ebc0bda230432bb335dbc",
+      "bytes": 10713
+    },
+    {
+      "path": "source/components/PlantAnatomy.tsx",
+      "sha256": "2112a3f7aa6224c973b0f5dc4db3818a03d0c7cbc7ea0d51ace62ba54fae28d7",
+      "bytes": 39437
+    },
+    {
+      "path": "source/components/ProductPortfolio.tsx",
+      "sha256": "8c073966ec414e8dfe88ff131aef0d6abc352f251bbd9de4e42f10c4d65ef20c",
+      "bytes": 22126
+    },
+    {
+      "path": "source/components/ProductsDropdown.tsx",
+      "sha256": "2890516d4e875c7dc9f00492a69eabdc34307db77132f63bb085211f86ac9f45",
+      "bytes": 12634
+    },
+    {
+      "path": "source/components/QuoteModal.tsx",
+      "sha256": "26e1a6570c31a52c1aedf9ae81681ece3b64ca8a9e0ca36e5c086a8e2118f910",
+      "bytes": 10403
+    },
+    {
+      "path": "source/components/SampleHomeContent.tsx",
+      "sha256": "8e3264d8303456f170036f80da99b4b072e5d0271c43d2ad67bc9b4025c6d0b9",
+      "bytes": 4462
+    },
+    {
+      "path": "source/components/SampleHomeV3Content.tsx",
+      "sha256": "905897a6c437323da38187f773a6abb5eae3ad0e78b5b856a7b9b711ce20038c",
+      "bytes": 5439
+    },
+    {
+      "path": "source/components/SectionReveal.tsx",
+      "sha256": "0ffe1b3b6a6721cae28436ab042403966d8a7c42987254e84b1128baad7206c6",
+      "bytes": 1023
+    },
+    {
+      "path": "source/components/SmoothScroll.tsx",
+      "sha256": "7ce217b7550bbfad59f90eefe621c5ec4c9cda80eb48a8a18f3a99b81e4b05f6",
+      "bytes": 2226
+    },
+    {
+      "path": "source/components/StakeholderRoutingGrid.tsx",
+      "sha256": "de7831bada0ffab61229af75c2be34e6be96ad29477c8177bfbf7d91c0b4c817",
+      "bytes": 8743
+    },
+    {
+      "path": "source/components/StatsBento.tsx",
+      "sha256": "939936ea4ab347d902a4eac49c9b3228dfd9510697ee9d9965d91f5660f47f46",
+      "bytes": 4630
+    },
+    {
+      "path": "source/components/SustainabilitySection.tsx",
+      "sha256": "3893a1b6a2dbae88277a12538f30a172a59a3fb5fa4443a01ceb0b3f4826c0fd",
+      "bytes": 7699
+    },
+    {
+      "path": "source/globals.css",
+      "sha256": "9d7afc22aba853286c9bf35ec17f91221f77c3cff6170eac3053d3c8929dffc2",
+      "bytes": 3065
+    },
+    {
+      "path": "source/hooks/useMotionPrefs.ts",
+      "sha256": "ada83360b626fce7a9249e3138eff515058a224b59750cdf6bde53b572da297d",
+      "bytes": 1282
+    },
+    {
+      "path": "source/hooks/useSectionProgress.ts",
+      "sha256": "403edd167d7e7cd3a9a8a52fd4a10e6086e143081741d93cd743b24094ce8b6b",
+      "bytes": 1240
+    },
+    {
+      "path": "source/layout.tsx",
+      "sha256": "bdf1b2261fad88722cb3ac8bde1776a6875bfb869c01cebfa6c3301a3a7d8352",
+      "bytes": 1075
+    },
+    {
+      "path": "source/lib/motion.ts",
+      "sha256": "b3e57a89404e59c260eab5efe3dd1de5408f1bce8d9e53935ec7edbd86ca07e1",
+      "bytes": 401
+    },
+    {
+      "path": "source/page.tsx",
+      "sha256": "6c7dbcfdd7f06419336daf387b924807e08ec0750f22087cafe287e895232eeb",
+      "bytes": 1158
+    },
+    {
+      "path": "source/routes/home-1/page.tsx",
+      "sha256": "cf93a7f777fb58f4967d38efdcabc7c49cadd16758a87618ed7374ded9fbeb45",
+      "bytes": 123
+    },
+    {
+      "path": "source/routes/home1/page.tsx",
+      "sha256": "2e2411a2819f4684ba6421a6286f943cc6d53de7b0068de8d91e4d041e2f4e2b",
+      "bytes": 1099
+    },
+    {
+      "path": "source/routes/home2/page.tsx",
+      "sha256": "385ade525e2e467b4f72e0cb07dff22e47ce157e91762c3edaa3ea275daedf31",
+      "bytes": 1095
+    }
+  ],
+  "configChanges": [
+    {
+      "path": "config/next.config.mjs",
+      "sha256": "50d223c53c43366856eb9e6821bc9051090cdf860eb3a0091d4d22e3be08d94d",
+      "bytes": 348
+    }
+  ],
+  "repositoryChanges": [
+    "app/home-v4-3/page.tsx",
+    "next.config.mjs",
+    "docs/home-v4-3-homepage-audit.md",
+    "docs/home-v4-3-remediation.md",
+    "docs/home-v4-3-motion.md",
+    "docs/home-v4-3-final-three-sections.md",
+    "versions/home-v4-3/README.md",
+    "versions/home-v4-3/manifest.json"
+  ],
+  "captureMode": {
+    "sections": [
+      "HeroSection",
+      "StatsBento",
+      "FounderLegacy",
+      "CompanyHistory",
+      "PlantAnatomy",
+      "StakeholderRoutingGrid",
+      "ProductPortfolio",
+      "SustainabilitySection",
+      "IconicProjects",
+      "CorporateFooter"
+    ],
+    "heroAutoplay": "disabled",
+    "stats": "final values",
+    "plantAnatomy": "scrollMode=free",
+    "footer": "normal flow, no curtain or spacer",
+    "verifiedInSsr": true
+  },
+  "remediation": {
+    "quoteContextWired": true,
+    "quoteModalAccessible": true,
+    "deadHashLinks": 0,
+    "heroIntervalMs": 6000,
+    "heroMockBadge": "persistent and screen-reader accessible",
+    "statsSampleNote": true,
+    "footerCurtainRemoved": true,
+    "useSyncExternalStore": true,
+    "unoptimizedImagesRemoved": true,
+    "rootGlobalCssChanged": false,
+    "newBinaryAssets": false
+  },
+  "finalThreeSections": [
+    "ProductPortfolio",
+    "SustainabilitySection",
+    "IconicProjects"
+  ],
+  "sourceFileCount": 38,
+  "sourceBytes": 493613,
+  "publicAssetStrategy": "relative symlink to repository root public/ (no duplicated binary assets)",
+  "publicSymlink": "../../public",
+  "publicSymlinkResolved": "/home/user/fectocement/public",
+  "publicFileCount": 42,
+  "publicBytes": 70265267,
+  "motionRules": {
+    "properties": [
+      "opacity",
+      "transform",
+      "clip-path",
+      "pathLength",
+      "width for small data bars"
+    ],
+    "ease": [
+      0.22,
+      1,
+      0.36,
+      1
+    ],
+    "durations": [
+      0.25,
+      0.5,
+      0.8
+    ],
+    "stagger": 0.08,
+    "scrollLinkedTransformsKept": [
+      "CompanyHistory gold rail scaleY"
+    ],
+    "removed": [
+      "Founder/History parallax",
+      "portrait scrub zoom",
+      "reactive glow",
+      "scroll-scrubbed year rise",
+      "animated grayscale",
+      "node pulse",
+      "pulsing status dot",
+      "Product pointer tilt",
+      "Product float",
+      "Product number counters",
+      "Product pulsing connectors",
+      "Product background parallax",
+      "Sustainability animated counter",
+      "Sustainability ping dot",
+      "Sustainability floating card",
+      "Sustainability image zoom",
+      "Projects parallax drifts",
+      "Projects navy sweep",
+      "Projects hidden hover metrics",
+      "Projects caption shift",
+      "Hero Ken Burns scale",
+      "Hero easeOut",
+      "Hero 3-second media scale",
+      "Hero active button scaling",
+      "Hero 2-second dwell",
+      "Stats 1.4-second counters",
+      "Stats 600ms highlight transition",
+      "Plant animate-ping",
+      "Plant expanding pulse rings",
+      "Plant 1.1\u20131.2s counters",
+      "Stakeholder navy sweep",
+      "Stakeholder -8px lift",
+      "Stakeholder 5% image zoom",
+      "surface-elevated hover lift",
+      "Footer fixed curtain",
+      "Footer spacer",
+      "Footer scrubbed CTA",
+      "Footer wordmark/footer parallax",
+      "Hero founder bottom alignment",
+      "Hero founder left-edge mask",
+      "Hero founder x:48 horizontal entrance"
+    ]
+  },
+  "unchangedPassList": [
+    "production /",
+    "/home-v4",
+    "/home-v4-2",
+    "root app/page.tsx",
+    "root app/layout.tsx",
+    "root app/globals.css",
+    "root tailwind.config.js",
+    "root package.json",
+    "root public assets"
+  ],
+  "validation": {
+    "typescript": "passed",
+    "fontMockedProductionBuild": "passed \u2014 44/44 static pages; re-run after portrait sizing and dev-origin updates",
+    "gitDiffCheck": "clean",
+    "devRoutes": {
+      "/": 200,
+      "/home-v4": 200,
+      "/home-v4-2": 200,
+      "/home-v4-3": 200
+    },
+    "homeV43RouteJs": "95.5 kB",
+    "homeV43FirstLoadJs": "273 kB",
+    "devLogWarnings": "none after config update, route checks, and headless browser captures",
+    "browserScreenshotRegression": "passed \u2014 temporary headless Chromium at 1280x800, 1024x640, 960x720, and 960x600; complete portrait visible with no Stats clipping",
+    "portraitPlacementBuild": "passed \u2014 44/44 static pages after Hero foreground composition change",
+    "devFontMock": "build-only Google Fonts mock supplied to dev process; no app font source changed",
+    "temporaryBrowserDependency": "installed outside repository in /tmp; no package.json change and no new binary asset in project",
+    "stagedDiffCheck": "clean after inherited trailing-whitespace normalization"
+  },
+  "docs": [
+    "docs/home-v4-3-motion.md",
+    "docs/home-v4-3-final-three-sections.md",
+    "docs/home-v4-3-homepage-audit.md",
+    "docs/home-v4-3-remediation.md",
+    "versions/home-v4-3/README.md"
+  ],
+  "founderPortraitPlacement": {
+    "trigger": "user-supplied desktop preview screenshots",
+    "sourceImage": "/images/founder-portrait.jpg",
+    "sourceDimensions": "1792x2400",
+    "oldTreatment": "lower-right, bottom-aligned 78% height, left-edge mask, clipped by stat-card overlap, x:48 entrance",
+    "newTreatment": "bounded vertically centered 3:4 card, object-contain full portrait, inset frame, static name plate, reserved bottom clearance",
+    "cardHeight": "min(430px, 54svh)",
+    "cardMaxWidth": "320px",
+    "entrance": "opacity only at DUR.base; exit at DUR.fast; static in capture and reduced-motion",
+    "sourceAssetChanged": false,
+    "otherRoutesChanged": false,
+    "cardWidth": "min(320px, 40.5svh)",
+    "mockBadgeTop": "100px",
+    "headlessViewportChecks": [
+      "1280x800",
+      "1024x640",
+      "960x720",
+      "960x600"
+    ],
+    "namePlateToStatsClearancePx": "16-75",
+    "badgeToCardClearancePx": "2-40"
+  },
+  "rootConfigAllowedDevOrigins": [
+    "localhost",
+    "127.0.0.1",
+    "*.e2b.app"
+  ]
+}
