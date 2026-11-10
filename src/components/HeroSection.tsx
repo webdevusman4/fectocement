@@ -135,7 +135,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   videoMp4Url = '/Untitled design.mp4',
   className = '',
   slides = HERO_SLIDES,
-  intervalMs = 10000,
+  intervalMs = 2000,
   autoplay = true,
   onActiveHighlightChange,
 }) => {
@@ -417,11 +417,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               }}
               transition={{
                 opacity: {
-                  duration: prefersReducedMotion ? 0.05 : 1.2,
+                  duration: prefersReducedMotion ? 0.05 : 0.5,
                   ease: EASE,
                 },
                 scale: {
-                  duration: prefersReducedMotion ? 0 : isActive ? 12 : 1.2,
+                  duration: prefersReducedMotion ? 0 : isActive ? 3 : 0.5,
                   ease: isActive ? 'linear' : EASE,
                 },
               }}
@@ -547,11 +547,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   >
                     {/* Eyebrow inside the box above headline */}
                     <motion.span
-                      initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                      initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{
-                        duration: prefersReducedMotion ? 0.2 : 0.5,
-                        delay: prefersReducedMotion ? 0 : 0.6,
+                        duration: prefersReducedMotion ? 0.2 : 0.3,
+                        delay: prefersReducedMotion ? 0 : 0.05,
                         ease: EASE,
                       }}
                       className="text-xs md:text-sm font-semibold tracking-widest uppercase text-[#F4D5AB] mb-3 sm:mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-sans"
@@ -575,9 +575,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                             initial={prefersReducedMotion ? { opacity: 0 } : { y: '105%' }}
                             animate={prefersReducedMotion ? { opacity: 1 } : { y: 0 }}
                             transition={{
-                              duration: prefersReducedMotion ? 0.2 : 0.8,
+                              duration: prefersReducedMotion ? 0.2 : 0.4,
                               ease: EASE,
-                              delay: prefersReducedMotion ? 0 : 0.3 + idx * 0.08,
+                              delay: prefersReducedMotion ? 0 : 0.08 + idx * 0.04,
                             }}
                           >
                             {line}
@@ -589,11 +589,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                   {/* Sub-headline: clamp(15px, 1.6vw, 20px), hidden below 640px height */}
                   <motion.p
-                    initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                    initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
-                      duration: prefersReducedMotion ? 0.2 : 0.5,
-                      delay: prefersReducedMotion ? 0 : 0.6 + currentSlide.lines.length * 0.08,
+                      duration: prefersReducedMotion ? 0.2 : 0.3,
+                      delay: prefersReducedMotion ? 0 : 0.16,
                       ease: EASE,
                     }}
                     className="hidden [@media(min-height:640px)]:block font-normal text-white/95 max-w-lg my-4 md:my-6 leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
@@ -606,11 +606,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                   {/* Action Buttons: Secondary hidden below 720px height */}
                   <motion.div
-                    initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                    initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
-                      duration: prefersReducedMotion ? 0.2 : 0.5,
-                      delay: prefersReducedMotion ? 0 : 0.68 + currentSlide.lines.length * 0.08,
+                      duration: prefersReducedMotion ? 0.2 : 0.3,
+                      delay: prefersReducedMotion ? 0 : 0.2,
                       ease: EASE,
                     }}
                     className="flex flex-wrap items-center gap-4 pt-2"
@@ -717,8 +717,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, transition: { duration: 0.3 } }}
                     transition={{
-                      duration: prefersReducedMotion ? 0.2 : 0.9,
-                      delay: prefersReducedMotion ? 0 : 0.4,
+                      duration: prefersReducedMotion ? 0.2 : 0.4,
+                      delay: prefersReducedMotion ? 0 : 0.15,
                       ease: EASE,
                     }}
                     className="relative w-full h-[520px] max-h-[min(540px,78vh)] flex items-end justify-center lg:justify-end"
