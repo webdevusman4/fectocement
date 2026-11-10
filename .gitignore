@@ -31,3 +31,6 @@ yarn-error.log*
 # python cache
 __pycache__/
 *.py[cod]
+
+# local analysis scratch
+.arena/

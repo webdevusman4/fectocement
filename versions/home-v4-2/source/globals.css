@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    overflow-x: clip;
+  }
+}
+
+@layer components {
+  /* Premium Light Icy Glassmorphism (Navbar & Floating Pills) */
+  .glass-arctic {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(240, 244, 255, 0.58) 100%);
+    backdrop-filter: blur(24px) saturate(190%) contrast(102%);
+    -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(102%);
+    border: 1px solid rgba(255, 255, 255, 0.88);
+    box-shadow: 
+      0 20px 45px -10px rgba(0, 0, 128, 0.14),
+      0 8px 18px -4px rgba(0, 0, 128, 0.06),
+      inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
+      inset 0 -1px 2px 0 rgba(0, 0, 128, 0.04);
+  }
+
+  /* Scrolled active state */
+  .glass-arctic-scrolled {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.90) 0%, rgba(235, 243, 255, 0.75) 100%);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 
+      0 26px 60px -12px rgba(0, 0, 128, 0.20),
+      0 10px 22px -5px rgba(0, 0, 128, 0.08),
+      inset 0 1px 2px 0 rgba(255, 255, 255, 1);
+  }
+
+  /* Elevated Surface with Floating Ambient Shadows & Specular Rims */
+  .surface-elevated {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.88) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 
+      0 16px 36px -8px rgba(0, 0, 128, 0.10),
+      0 6px 14px -4px rgba(0, 0, 128, 0.05),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+    transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .surface-elevated:hover {
+    transform: translateY(-8px);
+    box-shadow: 
+      0 32px 64px -12px rgba(0, 0, 128, 0.20),
+      0 12px 24px -6px rgba(0, 0, 128, 0.08),
+      inset 0 1px 1.5px 0 rgba(255, 255, 255, 1);
+    border-color: rgba(255, 255, 255, 1);
+  }
+
+  /* Smoked Glass for dark overlay cards & executive bio panels */
+  .glass-smoked {
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Legacy material tokens (kept for reference, no longer used by navbar) */
+.navy-glass-pill {
+  background-color: rgba(0, 0, 128, 0.88);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 80, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.navy-glass-card {
+  background-color: rgba(0, 0, 128, 0.95);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 80, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
