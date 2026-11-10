@@ -43,10 +43,6 @@ export const HERO_SLIDES: HeroSlide[] = [
       position: 'center center',
       mobilePosition: 'center center',
     },
-    foreground: {
-      src: '/fecto-50kg-bag.png',
-      alt: 'Fecto 50kg Portland Cement Bag',
-    },
     highlight: 'capacity',
   },
   {
@@ -57,9 +53,8 @@ export const HERO_SLIDES: HeroSlide[] = [
     primary: { label: 'Explore the plant', href: '#plant-anatomy' },
     secondary: { label: 'Request a bulk quote', href: '/request-quote' },
     media: {
-      type: 'video',
-      src: '/media/sangjani-plant.mp4',
-      poster: '/images/sangjani-aerial.jpg',
+      type: 'image',
+      src: '/images/sangjani-aerial.jpg',
       alt: 'Sangjani Industrial Cement Plant Aerial Tour',
       position: 'center center',
       mobilePosition: 'center center',
@@ -709,41 +704,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
 
             {/* ============================================================== */}
-            {/* RIGHT COLUMN: Centered Bag (S1) or Bottom-Aligned Portrait (S4) */}
+            {/* RIGHT COLUMN: Bottom-Aligned Founder Portrait (S4) */}
             {/* ============================================================== */}
             <div className="hidden md:flex justify-center items-center h-full max-h-[calc(100vh-132px)]">
               <AnimatePresence mode="wait">
-                {currentSlide.id === 'future' && (
-                  <motion.div
-                    key="fg-future"
-                    initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 48 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, transition: { duration: 0.3 } }}
-                    transition={{
-                      duration: prefersReducedMotion ? 0.2 : 0.9,
-                      delay: prefersReducedMotion ? 0 : 0.4,
-                      ease: EASE,
-                    }}
-                    className="relative group flex items-center justify-center max-h-[78%]"
-                  >
-                    <div
-                      className="absolute inset-0 bg-white/10 rounded-full blur-3xl transform scale-90 pointer-events-none"
-                      aria-hidden="true"
-                    />
-                    <div className="relative z-10 drop-shadow-[0_25px_50px_rgba(0,0,0,0.85)] transition-transform duration-500 group-hover:scale-105">
-                      <Image
-                        src={bagImageUrl}
-                        alt="Fecto 50kg Portland Cement Bag"
-                        width={420}
-                        height={580}
-                        priority
-                        className="w-auto max-w-[280px] sm:max-w-[340px] md:max-w-[380px] lg:max-w-[440px] max-h-[min(540px,78vh)] object-contain"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Slide 2 & 3: Visual removed per instructions */}
+                {/* Slides 1, 2 & 3: Background photography only, no foreground visuals */}
 
                 {currentSlide.id === 'story' && currentSlide.foreground && (
                   <motion.div
