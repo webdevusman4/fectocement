@@ -1,0 +1,39 @@
+{
+  "name": "home-v4.2 \u2014 founder & history iteration",
+  "baseVersion": "versions/home-v4",
+  "baseSourceCommit": "086fd68909eccb44cbc9094ada726eea555b4e01",
+  "liveRoute": "/home-v4-2",
+  "scope": "Founder Legacy and Company History only",
+  "productionRouteUnchanged": true,
+  "firstBaselineUnchanged": true,
+  "changedFiles": [
+    {
+      "path": "source/components/FounderLegacy.tsx",
+      "sha256": "3b6d8ef237e6352c0369d82a1369da1ee6410ac5165b0a563d92e671eb230727",
+      "bytes": 21975
+    },
+    {
+      "path": "source/components/CompanyHistory.tsx",
+      "sha256": "000fd08ea485d8e8ea8bbed3b71a688c5f73b8b60770c97fc38e20b2504f0490",
+      "bytes": 29747
+    },
+    {
+      "path": "source/components/SampleHomeV3Content.tsx",
+      "sha256": "a86d77d4346f936d9bc1fe7f057e9a51099324240137456b15daf36899759d25",
+      "bytes": 4666
+    }
+  ],
+  "sourceFileCount": 37,
+  "sourceBytes": 517427,
+  "publicAssetStrategy": "relative symlink to repository root public/ (no duplicated binary assets)",
+  "publicSymlink": "../../public",
+  "publicSymlinkResolved": "/home/user/fectocement/public",
+  "publicFileCount": 42,
+  "publicBytes": 70265267,
+  "globalCss": "source/globals.css (unchanged copy of app/globals.css)",
+  "motion": "staticReveal enabled for FounderLegacy and CompanyHistory",
+  "docs": [
+    "docs/home-v4-2-improvements.md",
+    "versions/home-v4-2/README.md"
+  ]
+}
