@@ -38,6 +38,7 @@ const GLASS =
   'bg-[#0A0F1F]/55 backdrop-blur-xl border border-white/15 ring-1 ring-inset ring-white/5 shadow-[0_24px_80px_rgba(0,0,40,0.45)]';
 const FOCUS =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0F1F]';
+const QUOTE_BTN = `rounded-full bg-white font-semibold text-[#000080] shadow-sm transition-colors hover:bg-[#F4D5AB] ${FOCUS}`;
 
 type Variant = 'desktop' | 'mobile';
 
@@ -74,6 +75,14 @@ export interface PlantAnatomyProps {
   debug?: boolean; // also on when the URL has ?plantDebug=1
   scrollMode?: 'pinned' | 'free';
   staticReveal?: boolean;
+  /**
+   * 'section' (default): mid-page sheet that overlaps the previous section and opens with the iris.
+   * 'hero': first block on the page. Fully open on load, clears the floating navbar, renders the
+   * page <h1>, never overlaps a previous section, and defaults to a single-viewport 'free' mode.
+   */
+  variant?: 'section' | 'hero';
+  /** Hero only: shows a primary "Request a bulk quote" action next to the tour control. */
+  onRequestQuote?: () => void;
 }
 
 // re-author panX/panY/scale after the final aerial is chosen (use debug mode)
@@ -315,6 +324,8 @@ export default function PlantAnatomy({
   debug = false,
   scrollMode,
   staticReveal = false,
+  variant = 'section',
+  onRequestQuote,
 }: PlantAnatomyProps) {
   const outerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -327,7 +338,11 @@ export default function PlantAnatomy({
 
   const { simple: prefersSimple } = useMotionPrefs();
   const simple = prefersSimple || staticReveal;
-  const isPinned = (scrollMode ?? (!simple ? 'pinned' : 'free')) === 'pinned';
+  const isHero = variant === 'hero';
+  const isPinned = (scrollMode ?? (!simple && !isHero ? 'pinned' : 'free')) === 'pinned';
+  // The iris "window opening" is an entrance for a mid-page section; a hero is open from the first frame.
+  const irisActive = isPinned && !isHero;
+  const Heading = isHero ? 'h1' : 'h2';
 
   // Section progress during pinning: start start -> end end
   const p = useSectionProgress(outerRef, 'pin');
@@ -381,7 +396,7 @@ export default function PlantAnatomy({
     }
   }, [q]);
 
-  const showAmbient = isPinned && !isMobile && !isReduced && ambientOn;
+  const showAmbient = irisActive && !isMobile && !isReduced && ambientOn;
   const [activeNodeId, setActiveNodeId] = useState<string>(() => initialNodeId || nodes[0]?.id || 'overview');
   const activeNodeIdRef = useRef<string>(activeNodeId);
   const [isTouring, setIsTouring] = useState(false);
@@ -627,20 +642,24 @@ export default function PlantAnatomy({
   if (!activeNode) return null;
 
   const hintText = isPinned ? 'Scroll or pick a stage' : 'Pick a stage or press Fly through';
+  const showTour = !isPinned && !isReduced;
+  const showQuote = isHero && Boolean(onRequestQuote);
 
   return (
     <div
       ref={outerRef}
       id="plant-anatomy"
-      className={`${Z.plant} relative bg-slate-50 rounded-t-[40px] -mt-10 shadow-[0_-20px_60px_rgba(0,0,60,0.25)] ${className}`}
+      className={`relative ${
+        isHero ? 'bg-[#0B1245]' : `${Z.plant} -mt-10 rounded-t-[40px] bg-slate-50 shadow-[0_-20px_60px_rgba(0,0,60,0.25)]`
+      } ${className}`}
       style={isPinned ? { height: `calc(100svh + ${40 + nodes.length * 35}svh)` } : undefined}
     >
       <section
         data-tone="dark"
-        aria-label="Plant anatomy"
-        className={`h-[100svh] min-h-[640px] w-full select-none overflow-hidden bg-[#0B1245] rounded-t-[40px] relative isolate text-white ${
-          isPinned ? 'sticky top-0' : ''
-        }`}
+        aria-label={isHero ? 'Inside the Sangjani plant' : 'Plant anatomy'}
+        className={`relative isolate h-[100svh] min-h-[640px] w-full select-none overflow-hidden bg-[#0B1245] text-white ${
+          isHero ? '' : 'rounded-t-[40px]'
+        } ${isPinned ? 'sticky top-0' : ''}`}
       >
         {/* Ambient Layer: calm, layered aerial echo around the unexpanded iris window */}
         {showAmbient && (
@@ -681,7 +700,7 @@ export default function PlantAnatomy({
 
         {/* Stage & HUD Iris container: clips like a window in pinned mode */}
         <motion.div
-          style={isPinned ? { clipPath: irisClipPath } : undefined}
+          style={irisActive ? { clipPath: irisClipPath } : undefined}
           className="absolute inset-0 z-[2] overflow-hidden"
         >
           {/* Stage: the drone canvas */}
@@ -770,6 +789,10 @@ export default function PlantAnatomy({
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(10,15,31,0.6)_100%)]" />
             {/* Bottom handoff band: ends on flat Midnight #0B1245 for the last 12svh */}
             <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[12svh] bg-gradient-to-t from-[#0B1245] to-transparent" />
+            {/* Hero only: top scrim so the floating navbar and the headline stay legible over the aerial */}
+            {isHero && (
+              <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[42%] bg-gradient-to-b from-[#0A0F1F]/80 via-[#0A0F1F]/25 to-transparent md:h-48 md:from-[#0A0F1F]/55" />
+            )}
           </motion.div>
 
           {isDebug && (
@@ -781,15 +804,32 @@ export default function PlantAnatomy({
 
           {/* HUD */}
           <motion.div
-            style={isPinned ? { opacity: hudOpacity } : undefined}
+            style={irisActive ? { opacity: hudOpacity } : undefined}
             className="pointer-events-none absolute inset-0 z-20"
           >
             {/* Desktop HUD */}
-            <div className="hidden h-full grid-cols-[minmax(240px,300px)_1fr_minmax(340px,400px)] items-center gap-8 p-10 md:grid lg:p-14">
+            <div
+              className={`hidden h-full items-center gap-8 md:grid ${
+                isHero
+                  ? 'grid-cols-[minmax(260px,340px)_1fr_minmax(340px,400px)] px-10 pb-10 pt-28 lg:px-14 lg:pb-12 lg:pt-32 [@media(max-height:760px)]:pt-24'
+                  : 'grid-cols-[minmax(240px,300px)_1fr_minmax(340px,400px)] p-10 lg:p-14'
+              }`}
+            >
               <div className="pointer-events-auto flex h-full flex-col justify-between py-2">
                 <div>
-                  <span className="font-mono text-sm text-[#F4D5AB]">Plant anatomy</span>
-                  <h2 className="mb-6 mt-1 font-display text-2xl font-bold tracking-tight text-white lg:text-3xl">From limestone to bag</h2>
+                  <span className="font-mono text-sm text-[#F4D5AB]">{isHero ? 'Inside the Sangjani plant' : 'Plant anatomy'}</span>
+                  <Heading
+                    className={`mt-1 font-display font-bold tracking-tight text-white ${
+                      isHero ? 'mb-3 text-3xl leading-[1.05] lg:text-[2.75rem]' : 'mb-6 text-2xl lg:text-3xl'
+                    }`}
+                  >
+                    From limestone to bag
+                  </Heading>
+                  {isHero && (
+                    <p className="mb-6 max-w-[34ch] text-sm leading-relaxed text-white/75 lg:text-base [@media(max-height:820px)]:hidden">
+                      Take a guided flight through the Sangjani plant, one stage at a time.
+                    </p>
+                  )}
                   <PillList nodes={nodes} activeIndex={activeIndex} variant="desktop" refs={desktopPills} onSelect={selectIndex} />
                   <AnimatePresence>
                     {showHint && !isReduced && (
@@ -805,9 +845,14 @@ export default function PlantAnatomy({
                     )}
                   </AnimatePresence>
                 </div>
-                {!isPinned && !isReduced && (
-                  <div className="border-t border-white/10 pt-6">
-                    <TourButton on={isTouring} onToggle={toggleTour} />
+                {(showTour || showQuote) && (
+                  <div className="flex flex-wrap items-center gap-3 border-t border-white/10 pt-6">
+                    {showQuote && (
+                      <button type="button" onClick={onRequestQuote} className={`${QUOTE_BTN} px-4 py-2 text-sm`}>
+                        Request a bulk quote
+                      </button>
+                    )}
+                    {showTour && <TourButton on={isTouring} onToggle={toggleTour} />}
                   </div>
                 )}
               </div>
@@ -825,13 +870,30 @@ export default function PlantAnatomy({
 
             {/* Mobile HUD */}
             <div className="flex h-full flex-col justify-end p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden">
-              <div className="pointer-events-auto absolute left-4 right-4 top-4 z-20 flex items-center justify-between">
+              <div
+                className={`pointer-events-auto absolute left-4 right-4 z-20 flex justify-between gap-3 ${
+                  isHero ? 'top-[6.5rem] items-start' : 'top-4 items-center'
+                }`}
+              >
                 <div>
-                  <span className="font-mono text-xs text-[#F4D5AB]">Plant anatomy</span>
-                  <h2 className="font-display text-lg font-bold tracking-tight text-white">From limestone to bag</h2>
+                  <span className="font-mono text-xs text-[#F4D5AB]">{isHero ? 'Inside the Sangjani plant' : 'Plant anatomy'}</span>
+                  <Heading className={`font-display font-bold tracking-tight text-white ${isHero ? 'text-2xl leading-tight' : 'text-lg'}`}>
+                    From limestone to bag
+                  </Heading>
+                  {showQuote && (
+                    <button type="button" onClick={onRequestQuote} className={`${QUOTE_BTN} mt-3 px-4 py-1.5 text-xs`}>
+                      Request a bulk quote
+                    </button>
+                  )}
                 </div>
-                {!isPinned && !isReduced && <TourButton on={isTouring} onToggle={toggleTour} compact />}
+                {showTour && <TourButton on={isTouring} onToggle={toggleTour} compact />}
               </div>
+
+              {showMockNotice && (
+                <span className="pointer-events-none mb-2 self-end rounded-full border border-white/10 bg-black/40 px-3 py-1 font-mono text-[11px] text-white/80 backdrop-blur-sm">
+                  Illustrative image, sample figures
+                </span>
+              )}
 
               <div id="plant-card-mobile" role="tabpanel" aria-labelledby={`tab-mobile-${activeNode.id}`} aria-live="polite" className="pointer-events-auto mb-3 max-h-[42svh] w-full overflow-y-auto">
                 <AnimatePresence mode="wait" initial={false}>
@@ -859,8 +921,8 @@ export default function PlantAnatomy({
 
           {showMockNotice && (
             <motion.div
-              style={isPinned ? { opacity: hudOpacity } : undefined}
-              className="pointer-events-none absolute bottom-4 right-4 z-30 md:bottom-6 md:right-8"
+              style={irisActive ? { opacity: hudOpacity } : undefined}
+              className="pointer-events-none absolute bottom-6 right-8 z-30 hidden md:block"
             >
               <span className="inline-block rounded-full border border-white/10 bg-black/40 px-3 py-1 font-mono text-[11px] text-white/80 backdrop-blur-sm">
                 Illustrative image, sample figures

@@ -11,6 +11,16 @@ This is the third isolated homepage iteration. It starts from `/home-v4-2`, appl
 - **Applied fixes:** `docs/home-v4-3-remediation.md`
 - **Production `/`:** untouched
 
+## Hero: Plant Anatomy (replaces the HeroSection carousel)
+
+The V4.3 page now opens on the Plant Anatomy drone tour. The former `HeroSection` carousel is no longer part of the composition. Section order: Plant Anatomy (hero) → Stats → Founder Legacy → Company History → Stakeholder paths → Products → Sustainability → Iconic Projects → Footer.
+
+- **`PlantAnatomy variant="hero"`:** open from the first frame (no iris clip, ambient layer, or HUD fade-in). It renders the page `<h1>` ("From limestone to bag"), clears the floating navbar, has no negative-margin sheet overlap, and adds a top scrim so the navbar stays legible. It fits one `100svh` viewport in `free` mode. A primary **Request a bulk quote** action sits beside **Fly through**. The default `variant="section"` keeps the original pinned iris behaviour.
+- **Mobile:** the "Illustrative image, sample figures" chip now sits above the spec card instead of overlapping the stage pills.
+- **Stats:** normal flow below the hero; the hero-driven highlight is gone.
+- **Stakeholder paths:** `overlapPrevious={false}` removes the negative margin it used to pull up over the plant's dark bottom band. It now continues the light Company History sheet.
+- **`HeroSection.tsx` kept:** it is still imported by the unrouted `SampleHomeContent` and `LegacyHomeV1Content` compositions.
+
 ## What changed from V4.2
 
 ### 1. Founder Legacy and Company History
@@ -47,7 +57,7 @@ This is the third isolated homepage iteration. It starts from `/home-v4-2`, appl
 - All entrance animations fire once.
 - Mobile and reduced-motion output is static.
 - Capture mode disables autoplay, pinning, scroll scrubbing, and the footer curtain.
-- Normal desktop still retains the Hero carousel and Plant tour; capture mode makes both deterministic.
+- The Plant Anatomy hero has no autoplay. Its "Fly through" tour starts only when the visitor presses it, and capture mode keeps it static.
 
 ## Capture mode
 
@@ -57,7 +67,7 @@ This is the third isolated homepage iteration. It starts from `/home-v4-2`, appl
 const SCREENSHOT_SAFE_MODE = false;
 ```
 
-Set it to `true` for full-page screenshot capture or static review. It makes all ten V4.3 sections deterministic while preserving layout and content.
+Set it to `true` for full-page screenshot capture or static review. It makes all nine V4.3 sections deterministic while preserving layout and content.
 
 ## Assets and standalone export
 

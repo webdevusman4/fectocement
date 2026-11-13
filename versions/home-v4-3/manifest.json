@@ -10,7 +10,7 @@
     "title": "Home V4.3 \u2014 mock design preview",
     "description": "Isolated executive-restraint homepage mock for layout, motion, and interaction review."
   },
-  "screenshotSafeFlag": "source/components/SampleHomeV3Content.tsx :: SCREENSHOT_SAFE_MODE = false; passed as staticReveal to all ten V4.3 sections",
+  "screenshotSafeFlag": "source/components/SampleHomeV3Content.tsx :: SCREENSHOT_SAFE_MODE = false; passed as staticReveal to all nine V4.3 sections",
   "changedFiles": [
     {
       "path": "source/components/CareersNewsDropdown.tsx",
@@ -74,8 +74,8 @@
     },
     {
       "path": "source/components/PlantAnatomy.tsx",
-      "sha256": "2112a3f7aa6224c973b0f5dc4db3818a03d0c7cbc7ea0d51ace62ba54fae28d7",
-      "bytes": 39437
+      "sha256": "6a5e54a81b0b5f0e2cb13292ebefe4c334c952426750595d4fda6b844ce480ef",
+      "bytes": 42767
     },
     {
       "path": "source/components/ProductPortfolio.tsx",
@@ -99,8 +99,8 @@
     },
     {
       "path": "source/components/SampleHomeV3Content.tsx",
-      "sha256": "905897a6c437323da38187f773a6abb5eae3ad0e78b5b856a7b9b711ce20038c",
-      "bytes": 5439
+      "sha256": "428636a7ad8a653a2fa3c4fbf7a8b09616c3b80a690c713458646f47c1f3cf5f",
+      "bytes": 4816
     },
     {
       "path": "source/components/SectionReveal.tsx",
@@ -114,8 +114,8 @@
     },
     {
       "path": "source/components/StakeholderRoutingGrid.tsx",
-      "sha256": "de7831bada0ffab61229af75c2be34e6be96ad29477c8177bfbf7d91c0b4c817",
-      "bytes": 8743
+      "sha256": "161fcc795e97cf0d8da81a4f673f0406c275e631c57bff42cdc272145d2a5be3",
+      "bytes": 9136
     },
     {
       "path": "source/components/StatsBento.tsx",
@@ -192,20 +192,18 @@
   ],
   "captureMode": {
     "sections": [
-      "HeroSection",
+      "PlantAnatomy (hero)",
       "StatsBento",
       "FounderLegacy",
       "CompanyHistory",
-      "PlantAnatomy",
       "StakeholderRoutingGrid",
       "ProductPortfolio",
       "SustainabilitySection",
       "IconicProjects",
       "CorporateFooter"
     ],
-    "heroAutoplay": "disabled",
     "stats": "final values",
-    "plantAnatomy": "scrollMode=free",
+    "plantAnatomy": "variant=hero; free mode in all states (no pinning or iris), static reveal in capture mode",
     "footer": "normal flow, no curtain or spacer",
     "verifiedInSsr": true
   },
@@ -364,5 +362,19 @@
     "localhost",
     "127.0.0.1",
     "*.e2b.app"
-  ]
+  ],
+  "heroReplacement": {
+    "date": "2026-11-13",
+    "change": "HeroSection carousel removed from the V4.3 composition; PlantAnatomy is now the first section and the page hero",
+    "plantAnatomyVariant": "variant='hero': open from the first frame (no iris clip, ambient layer or HUD fade), page <h1> 'From limestone to bag', clears the 92px floating navbar, no -mt/rounded-top sheet overlap, top scrim for navbar legibility, single 100svh viewport in free mode, primary 'Request a bulk quote' action beside 'Fly through'",
+    "sectionVariantUnchanged": "variant='section' (default) keeps the original pinned iris behaviour",
+    "mobileMockNotice": "moved from an absolute bottom-right chip (overlapped the stage pills) into the HUD flow above the spec card; desktop position unchanged",
+    "stats": "normal flow below the hero (no negative overlap); hero-driven activeHighlight removed",
+    "stakeholderRoutingGrid": "overlapPrevious={false}: no negative margin over Company History; light gradient continues the History sheet",
+    "heroSectionFileRetained": "source/components/HeroSection.tsx is still imported by the unrouted SampleHomeContent and LegacyHomeV1Content compositions",
+    "validation": {
+      "typescript": "passed",
+      "devBrowserCheck": "passed on /home-v4-3 at 1440x900, 800x609 and 375x812: single visible h1, hero height = viewport, quote modal opens and closes with Escape, stage selection flies the camera, navbar tone flips correctly, no console errors"
+    }
+  }
 }
