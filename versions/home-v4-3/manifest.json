@@ -74,8 +74,13 @@
     },
     {
       "path": "source/components/PlantAnatomy.tsx",
-      "sha256": "6a5e54a81b0b5f0e2cb13292ebefe4c334c952426750595d4fda6b844ce480ef",
-      "bytes": 42767
+      "sha256": "5897920b5c5c5f8b192c4bd9f0a9da423e3017e7e992fc24081f7531c7aa6759",
+      "bytes": 53375
+    },
+    {
+      "path": "source/components/PlantDepth.tsx",
+      "sha256": "7734dcd526e1e343a70d5891eb07d597e3b2ec80367dd9d13310e0f99c7a4f4d",
+      "bytes": 14662
     },
     {
       "path": "source/components/ProductPortfolio.tsx",
@@ -99,8 +104,8 @@
     },
     {
       "path": "source/components/SampleHomeV3Content.tsx",
-      "sha256": "428636a7ad8a653a2fa3c4fbf7a8b09616c3b80a690c713458646f47c1f3cf5f",
-      "bytes": 4816
+      "sha256": "729a63cf13c5eb1b4432861939baccdcdf1d9d904b3cf857433435a6e409d0d3",
+      "bytes": 4847
     },
     {
       "path": "source/components/SectionReveal.tsx",
@@ -203,7 +208,7 @@
       "CorporateFooter"
     ],
     "stats": "final values",
-    "plantAnatomy": "variant=hero; free mode in all states (no pinning or iris), static reveal in capture mode",
+    "plantAnatomy": "variant=hero; capture mode forces free (unpinned, static); no iris in any mode",
     "footer": "normal flow, no curtain or spacer",
     "verifiedInSsr": true
   },
@@ -218,7 +223,7 @@
     "useSyncExternalStore": true,
     "unoptimizedImagesRemoved": true,
     "rootGlobalCssChanged": false,
-    "newBinaryAssets": false
+    "newBinaryAssets": true
   },
   "finalThreeSections": [
     "ProductPortfolio",
@@ -230,8 +235,8 @@
   "publicAssetStrategy": "relative symlink to repository root public/ (no duplicated binary assets)",
   "publicSymlink": "../../public",
   "publicSymlinkResolved": "/home/user/fectocement/public",
-  "publicFileCount": 42,
-  "publicBytes": 70265267,
+  "publicFileCount": 45,
+  "publicBytes": 75430649,
   "motionRules": {
     "properties": [
       "opacity",
@@ -366,7 +371,7 @@
   "heroReplacement": {
     "date": "2026-11-13",
     "change": "HeroSection carousel removed from the V4.3 composition; PlantAnatomy is now the first section and the page hero",
-    "plantAnatomyVariant": "variant='hero': open from the first frame (no iris clip, ambient layer or HUD fade), page <h1> 'From limestone to bag', clears the 92px floating navbar, no -mt/rounded-top sheet overlap, top scrim for navbar legibility, single 100svh viewport in free mode, primary 'Request a bulk quote' action beside 'Fly through'",
+    "plantAnatomyVariant": "variant='hero': no iris entrance, intro copy over the overview first, clears the 92px floating navbar, no -mt/rounded-top sheet overlap, top scrim for navbar legibility",
     "sectionVariantUnchanged": "variant='section' (default) keeps the original pinned iris behaviour",
     "mobileMockNotice": "moved from an absolute bottom-right chip (overlapped the stage pills) into the HUD flow above the spec card; desktop position unchanged",
     "stats": "normal flow below the hero (no negative overlap); hero-driven activeHighlight removed",
@@ -374,7 +379,59 @@
     "heroSectionFileRetained": "source/components/HeroSection.tsx is still imported by the unrouted SampleHomeContent and LegacyHomeV1Content compositions",
     "validation": {
       "typescript": "passed",
-      "devBrowserCheck": "passed on /home-v4-3 at 1440x900, 800x609 and 375x812: single visible h1, hero height = viewport, quote modal opens and closes with Escape, stage selection flies the camera, navbar tone flips correctly, no console errors"
+      "devBrowserCheck": "passed on /home-v4-3 at 1440x900, 800x609 and 375x812: single visible h1, hero height = viewport, quote modal opens and closes with Escape, stage selection flies the camera, navbar tone flips correctly, no console errors",
+      "scrollCheck": "passed at 1440x900: section stays pinned (top 0) through the 2880px run, stages advance in order, h1 visible throughout, clip-path none, pill click scrolls to stage; 375x812 stays 812px tall with Fly through; no console errors"
+    },
+    "scrollDrivenStages": "desktop: pinned 420svh runway like the section variant; scroll advances overview -> power, stage pills scroll to their stage, \"Scroll or pick a stage\" hint on load. Mobile, reduced motion and capture: single 100svh free mode with Fly through",
+    "depthLayer": {
+      "source": "user-supplied fecto-plant-3d.zip (PlantDepth.tsx, INTEGRATION.md, three images)",
+      "component": "source/components/PlantDepth.tsx (unchanged from the zip; imports framer-motion)",
+      "assets": [
+        {
+          "path": "public/images/plant/plant-6000.webp",
+          "bytes": 2569550,
+          "sha256": "7c3c698c2c7d32ab4096b8e840faca029f69ab9d9ccb4daf4fc0c0cca99b22d0"
+        },
+        {
+          "path": "public/images/plant/plant-4096.jpg",
+          "bytes": 2183879,
+          "sha256": "da4b122e218fbf49026c0fa1ad83f2db68748426b139760d3d84e6225dcf567b"
+        },
+        {
+          "path": "public/images/plant/depth.png",
+          "bytes": 411824,
+          "sha256": "354e301d0d4833d05126789f880c86fed6a1e44b34dd2c99f80f0e872259222f"
+        }
+      ],
+      "integration": "usePlantDepth reads the existing x / y / cameraScale; canvas div uses depth.camX/camY/camScale; PlantDepthCanvas is the first child of the Stage div (outside the CSS-scaled canvas); flat next/image (plant-4096.jpg) shows until WebGL reports ready and stays when WebGL2 is unavailable; markers moved into PlantMarker with useDepthShift; fog follows the depth camera; PlantNode gains depth (values from INTEGRATION.md)",
+      "markerCentering": "marker centring moved from Tailwind -translate-1/2 classes (overwritten by the motion transform) to motion x/y -50% on an inner button, with the depth shift on an outer anchor",
+      "propsAdded": "depth3d?: PlantDepthSources | false (defaults to PLANT_DEPTH_SOURCES); imageSrc default -> /images/plant/plant-4096.jpg; imageAspect default -> 6000/3376",
+      "reducedMotion": "enabled=false when reduced motion or capture mode (no hover, breathe, sway or parallax); WebGL still draws a still frame",
+      "validation": "tsc passed; dev browser: WebGL2 active, desktop loads plant-6000.webp + depth.png, 375x812 loads plant-4096.jpg + depth.png, flat image unmounts once ready, idle hover changes the camera transform, markers centred on anchors, kiln zoom sharp, no console errors. OS reduced-motion not toggled in the browser check"
+    },
+    "edgeStageAutoZoom": {
+      "problem": "the no-edge camera clamp stopped edge stages short of the focal anchor (1366x768: crusher -259px, packing +350px, power +262px), leaving them under the HUD",
+      "fix": "per stage s = min(max(authored scale, smallest scale that lets the focal point reach the anchor under the PULL_SAFETY clamp), SOURCE_PX_WIDTH * MAX_UPSCALE / canvasW)",
+      "constants": {
+        "PULL_SAFETY": 0.95,
+        "SOURCE_PX_WIDTH": 6000,
+        "MAX_UPSCALE": 1.25
+      },
+      "predicted": {
+        "1366x768": "crusher 3.23, packing 3.43, power 2.48: all on anchor",
+        "1440x900": "crusher 2.91, packing 3.09, power 2.24: all on anchor",
+        "1920x1080": "crusher and packing capped at 2.60 (171/249px short, in the clear area); power on anchor"
+      },
+      "mobile": "unchanged (no stage was clamped)",
+      "validation": "tsc passed; geometry model reproduces the reported crusher position (predicted x~369 vs screenshot ~358 at 1366x768). In-browser check pending: the Browser pane was hidden, which pauses requestAnimationFrame"
+    },
+    "heroIntro": {
+      "flow": "load on the overview aerial with intro copy (eyebrow, page <h1>, sub, Request a bulk quote, Explore the plant, scroll cue); anatomy HUD and markers hidden. Scroll crossfade: copy opacity 1->0 and y 0->-36 over introQ 0.06-0.5, scrim 0.1-0.75, HUD + markers opacity 0->1 and y 20->0 over 0.45-0.95; visibility hidden at the ends so hidden layers are not focusable or clickable",
+      "copy": "PLANT_HERO_INTRO: \"Fecto Cement \u00b7 Since 1981\" / \"Building Pakistan's Future.\" / \"High-performance cement for the towers, motorways and dams this country is built on.\" (heroIntro prop)",
+      "runway": "desktop: HERO_INTRO_SVH 80 in front of the 320svh stage tour (outer 100svh + 400svh); phones: HERO_INTRO_SVH_MOBILE 70 pin for the crossfade only, tour stays tap-driven",
+      "headings": "intro holds the page h1; the HUD heading \"From limestone to bag\" is an h2",
+      "reducedMotionAndCapture": "no scrubbing; Explore the plant sets introQ to 1 instantly and focuses the active stage pill",
+      "validation": "tsc passed; dev page load: one h1, intro opacity 1 / visible, HUD and markers opacity 0 / hidden, section sticky, runway 4 viewports at 1366x768, no console errors. Scroll crossfade not observed live: the Browser pane was hidden (0 animation frames per second)"
     }
   }
 }

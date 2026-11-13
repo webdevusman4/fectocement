@@ -13,11 +13,13 @@ import {
   useSpring,
   useTransform,
   useVelocity,
+  type MotionValue,
 } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { useMotionPrefs } from '../hooks/useMotionPrefs';
 import { useSectionProgress } from '../hooks/useSectionProgress';
 import { scrollToY } from './SmoothScroll';
+import { PlantDepthCanvas, usePlantDepth, useDepthShift, type PlantDepth } from './PlantDepth';
 import { DUR, Z } from '../lib/motion';
 
 /* ───────────── constants ───────────── */
@@ -29,7 +31,14 @@ const PULL_SPRING = { stiffness: 80, damping: 20 };
 const BREAKPOINT_MOBILE = 768;
 const ANCHORS = { DESKTOP: { ax: -0.04, ay: 0 }, MOBILE: { ax: 0, ay: -0.19 } }; // fractions of stage size
 const MOBILE_ZOOM_FACTOR = 0.6;
+const PULL_SAFETY = 0.95; // the clamp assumes the mid-flight pull-back (pullSpring min 0.95)
+// Auto-zoom cap: never magnify the source photo past MAX_UPSCALE (CSS px per source px)
+const SOURCE_PX_WIDTH = 6000; // PLANT_DEPTH_SOURCES.src
+const MAX_UPSCALE = 1.25;
 const TOUR_INTERVAL_MS = 7000;
+// Hero intro: scroll runway (svh) for the copy -> anatomy crossfade, before the stage tour starts
+const HERO_INTRO_SVH = 80; // desktop, added in front of the pinned stage tour
+const HERO_INTRO_SVH_MOBILE = 70; // phones: a short pin for the crossfade only; the tour stays tap-driven
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 const NF = new Intl.NumberFormat('en');
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -60,7 +69,39 @@ export interface PlantNode {
   panX: number; // focal point, % of image width (0 to 100, from top-left)
   panY: number; // focal point, % of image height
   scale: number; // desktop zoom (1 = whole canvas)
+  depth: number; // 0 (far) to 1 (near), read from depth.png at panX/panY; drives the 3D pivot and marker glue
+  /**
+   * Optional hand-set camera framing (the marker stays at panX/panY). x/y: focal point in %, scale: zoom.
+   * edgeRevealVw lets the photo's edge move this far into view (fraction of viewport width); the photo
+   * then feathers into the section navy instead of showing a hard edge. Auto-zoom is skipped for a view.
+   */
+  view?: { x: number; y: number; scale: number; edgeRevealVw?: number };
 }
+
+/** WebGL 2.5D depth layer sources. `false` turns the layer off and keeps the flat <Image>. */
+export interface PlantDepthSources {
+  src: string; // large image for desktops (6000px webp)
+  srcSmall: string; // <=4096px image for phones and small GPUs
+  depthSrc: string; // grayscale depth map, white = near
+}
+
+export interface PlantHeroIntro {
+  eyebrow: string;
+  title: string; // the page <h1>
+  sub: string;
+}
+
+export const PLANT_HERO_INTRO: PlantHeroIntro = {
+  eyebrow: 'Fecto Cement · Since 1981',
+  title: "Building Pakistan's Future.",
+  sub: 'High-performance cement for the towers, motorways and dams this country is built on.',
+};
+
+export const PLANT_DEPTH_SOURCES: PlantDepthSources = {
+  src: '/images/plant/plant-6000.webp',
+  srcSmall: '/images/plant/plant-4096.jpg',
+  depthSrc: '/images/plant/depth.png',
+};
 
 export interface PlantAnatomyProps {
   className?: string;
@@ -75,27 +116,32 @@ export interface PlantAnatomyProps {
   debug?: boolean; // also on when the URL has ?plantDebug=1
   scrollMode?: 'pinned' | 'free';
   staticReveal?: boolean;
+  /** WebGL depth layer (defaults to PLANT_DEPTH_SOURCES). `false` keeps the flat image only. */
+  depth3d?: PlantDepthSources | false;
   /**
    * 'section' (default): mid-page sheet that overlaps the previous section and opens with the iris.
-   * 'hero': first block on the page. Fully open on load, clears the floating navbar, renders the
-   * page <h1>, never overlaps a previous section, and defaults to a single-viewport 'free' mode.
+   * 'hero': first block on the page, never overlapping a previous section. It opens on the overview
+   * aerial with the intro copy (page <h1>) and the anatomy HUD hidden. Scrolling crossfades the copy out
+   * and the HUD + markers in, then the pinned stage tour continues as usual (no iris entrance).
    */
   variant?: 'section' | 'hero';
+  /** Hero only: intro copy shown over the aerial before the anatomy activates. */
+  heroIntro?: PlantHeroIntro;
   /** Hero only: shows a primary "Request a bulk quote" action next to the tour control. */
   onRequestQuote?: () => void;
 }
 
-// re-author panX/panY/scale after the final aerial is chosen (use debug mode)
+// re-author panX/panY/scale after the final aerial is chosen (use debug mode); depth is measured from depth.png at panX/panY
 // SAMPLE DATA: confirm every figure with Fecto before launch
 export const PLANT_NODES: PlantNode[] = [
-  { id: 'overview', label: 'Whole plant', kicker: 'Overview', title: 'Sangjani, Islamabad', blurb: 'A dry-process cement plant that turns limestone into 50 kg bags, with part of its power generated on site.', metrics: [{ label: 'Clinker capacity', value: 3000, unit: 'MT/day' }, { label: 'Quality system', value: 'ISO 9001:2015' }], panX: 50, panY: 50, scale: 1 },
-  { id: 'crusher', label: 'Crusher', kicker: 'Stage 01', title: 'Crushing limestone', blurb: 'Quarried limestone is crushed to a size the rest of the plant can handle.', metrics: [{ label: 'Material', value: 'Limestone' }, { label: 'Role', value: 'Primary crushing' }], panX: 12, panY: 38, scale: 1.9 },
-  { id: 'stacker-reclaimer', label: 'Stacker and reclaimer', kicker: 'Stage 02', title: 'Blending the feed', blurb: 'Crushed stone is stacked in layers and reclaimed together, so the kiln feed stays consistent.', metrics: [{ label: 'Purpose', value: 'Consistent kiln feed' }, { label: 'Method', value: 'Layered blending' }], panX: 22, panY: 54, scale: 1.7 },
-  { id: 'raw-grinding', label: 'Raw grinding', kicker: 'Stage 03', title: 'Raw meal', blurb: 'Limestone and additives are ground into fine raw meal.', metrics: [{ label: 'Output', value: 'Fine raw meal' }, { label: 'Next step', value: 'Preheater tower' }], panX: 38, panY: 43, scale: 1.8 },
-  { id: 'kiln', label: 'Preheater, kiln, cooler', kicker: 'Stage 04', title: 'The kiln', blurb: 'Raw meal is heated in the rotary kiln to form clinker, then cooled quickly.', metrics: [{ label: 'Kiln temperature', value: 1450, unit: '°C' }, { label: 'Capacity', value: 3000, unit: 'MT/day' }, { label: 'Process', value: 'Dry process' }], panX: 53, panY: 44, scale: 2.1 },
-  { id: 'cement-mill', label: 'Cement mill', kicker: 'Stage 05', title: 'Grinding cement', blurb: 'Clinker and gypsum are ground into finished cement.', metrics: [{ label: 'Inputs', value: 'Clinker and gypsum' }, { label: 'Grades', value: 'OPC, SRC, blended' }], panX: 66, panY: 57, scale: 1.8 },
-  { id: 'packing', label: 'Packing', kicker: 'Stage 06', title: 'Bagged for the site', blurb: 'Cement is bagged and dispatched to dealers and project sites.', metrics: [{ label: 'Bag size', value: 50, unit: 'kg' }, { label: 'Bags per tonne', value: 20 }], panX: 87, panY: 62, scale: 1.8 },
-  { id: 'power', label: 'Waste heat and solar', kicker: 'Stage 07', title: 'Power from the plant itself', blurb: "Kiln exhaust heat and a solar array generate part of the plant's electricity.", metrics: [{ label: 'Waste heat recovery', value: 6, unit: 'MW' }, { label: 'Solar', value: 5, unit: 'MW' }], panX: 83, panY: 33, scale: 1.6 },
+  { id: 'overview', label: 'Whole plant', kicker: 'Overview', title: 'Sangjani, Islamabad', blurb: 'A dry-process cement plant that turns limestone into 50 kg bags, with part of its power generated on site.', metrics: [{ label: 'Clinker capacity', value: 3000, unit: 'MT/day' }, { label: 'Quality system', value: 'ISO 9001:2015' }], panX: 50, panY: 50, scale: 1, depth: 0.417 },
+  { id: 'crusher', label: 'Crusher', kicker: 'Stage 01', title: 'Crushing limestone', blurb: 'Quarried limestone is crushed to a size the rest of the plant can handle.', metrics: [{ label: 'Material', value: 'Limestone' }, { label: 'Role', value: 'Primary crushing' }], panX: 12, panY: 38, scale: 1.9, depth: 0.297, view: { x: 8.5, y: 37.5, scale: 1.95, edgeRevealVw: 0.3 } }, // framed between the excavators and the crusher; conveyor trails off to the right
+  { id: 'stacker-reclaimer', label: 'Stacker and reclaimer', kicker: 'Stage 02', title: 'Blending the feed', blurb: 'Crushed stone is stacked in layers and reclaimed together, so the kiln feed stays consistent.', metrics: [{ label: 'Purpose', value: 'Consistent kiln feed' }, { label: 'Method', value: 'Layered blending' }], panX: 22, panY: 54, scale: 1.7, depth: 0.45 },
+  { id: 'raw-grinding', label: 'Raw grinding', kicker: 'Stage 03', title: 'Raw meal', blurb: 'Limestone and additives are ground into fine raw meal.', metrics: [{ label: 'Output', value: 'Fine raw meal' }, { label: 'Next step', value: 'Preheater tower' }], panX: 38, panY: 43, scale: 1.8, depth: 0.407 },
+  { id: 'kiln', label: 'Preheater, kiln, cooler', kicker: 'Stage 04', title: 'The kiln', blurb: 'Raw meal is heated in the rotary kiln to form clinker, then cooled quickly.', metrics: [{ label: 'Kiln temperature', value: 1450, unit: '°C' }, { label: 'Capacity', value: 3000, unit: 'MT/day' }, { label: 'Process', value: 'Dry process' }], panX: 53, panY: 44, scale: 2.1, depth: 0.383 },
+  { id: 'cement-mill', label: 'Cement mill', kicker: 'Stage 05', title: 'Grinding cement', blurb: 'Clinker and gypsum are ground into finished cement.', metrics: [{ label: 'Inputs', value: 'Clinker and gypsum' }, { label: 'Grades', value: 'OPC, SRC, blended' }], panX: 66, panY: 57, scale: 1.8, depth: 0.515 },
+  { id: 'packing', label: 'Packing', kicker: 'Stage 06', title: 'Bagged for the site', blurb: 'Cement is bagged and dispatched to dealers and project sites.', metrics: [{ label: 'Bag size', value: 50, unit: 'kg' }, { label: 'Bags per tonne', value: 20 }], panX: 87, panY: 62, scale: 1.8, depth: 0.525 },
+  { id: 'power', label: 'Waste heat and solar', kicker: 'Stage 07', title: 'Power from the plant itself', blurb: "Kiln exhaust heat and a solar array generate part of the plant's electricity.", metrics: [{ label: 'Waste heat recovery', value: 6, unit: 'MW' }, { label: 'Solar', value: 5, unit: 'MW' }], panX: 83, panY: 33, scale: 1.6, depth: 0.265 },
 ];
 
 /* ───────────── small components ───────────── */
@@ -309,12 +355,55 @@ function TourButton({ on, onToggle, compact }: { on: boolean; onToggle: () => vo
   );
 }
 
+interface PlantMarkerProps {
+  node: PlantNode;
+  active: boolean;
+  depth: PlantDepth;
+  markerScale: MotionValue<number>;
+  isDebug: boolean;
+  onSelect: () => void;
+}
+
+/**
+ * One stage marker, glued to its building. The outer anchor carries the depth shift (hooks can't run
+ * inside .map()); the inner button carries centring and the counter-scale, so no transform overwrites another.
+ */
+const PlantMarker = memo(function PlantMarker({ node, active, depth, markerScale, isDebug, onSelect }: PlantMarkerProps) {
+  const shift = useDepthShift(depth, node.panX, node.panY, node.depth);
+  return (
+    <motion.div aria-hidden="true" style={{ left: `${node.panX}%`, top: `${node.panY}%`, x: shift.x, y: shift.y }} className="absolute size-0">
+      <motion.button
+        type="button"
+        tabIndex={-1}
+        onClick={(e) => {
+          if (isDebug) return e.stopPropagation();
+          onSelect();
+        }}
+        style={{ x: '-50%', y: '-50%', scale: markerScale }}
+        className={`group absolute left-0 top-0 flex size-5 items-center justify-center md:size-7 ${isDebug ? 'pointer-events-none' : 'cursor-pointer'}`}
+      >
+        {active ? (
+          <>
+            <span className="absolute inset-0 rounded-full bg-[#F4D5AB]/20" />
+            <span className="absolute inset-0 rounded-full border-2 border-[#F4D5AB]" />
+            <span className="size-2.5 rounded-full bg-[#F4D5AB] shadow-md md:size-3.5" />
+          </>
+        ) : (
+          <span className="flex size-4 items-center justify-center rounded-full border border-white/70 bg-black/40 transition-colors group-hover:border-[#F4D5AB] md:size-5">
+            <span className="size-1.5 rounded-full bg-white/70 transition-colors group-hover:bg-[#F4D5AB] md:size-2" />
+          </span>
+        )}
+      </motion.button>
+    </motion.div>
+  );
+});
+
 /* ───────────── main component ───────────── */
 
 export default function PlantAnatomy({
   className = '',
-  imageSrc = '/images/sangjani-aerial.jpg',
-  imageAspect = 1672 / 941,
+  imageSrc = '/images/plant/plant-4096.jpg',
+  imageAspect = 6000 / 3376,
   imageAlt = 'Aerial view of a cement plant',
   blurDataURL,
   nodes = PLANT_NODES,
@@ -324,7 +413,9 @@ export default function PlantAnatomy({
   debug = false,
   scrollMode,
   staticReveal = false,
+  depth3d = PLANT_DEPTH_SOURCES,
   variant = 'section',
+  heroIntro = PLANT_HERO_INTRO,
   onRequestQuote,
 }: PlantAnatomyProps) {
   const outerRef = useRef<HTMLDivElement>(null);
@@ -339,10 +430,10 @@ export default function PlantAnatomy({
   const { simple: prefersSimple } = useMotionPrefs();
   const simple = prefersSimple || staticReveal;
   const isHero = variant === 'hero';
-  const isPinned = (scrollMode ?? (!simple && !isHero ? 'pinned' : 'free')) === 'pinned';
+  // Desktop pins the stage and lets scroll drive the tour (hero included); mobile, reduced motion and capture stay 'free'.
+  const isPinned = (scrollMode ?? (!simple ? 'pinned' : 'free')) === 'pinned';
   // The iris "window opening" is an entrance for a mid-page section; a hero is open from the first frame.
   const irisActive = isPinned && !isHero;
-  const Heading = isHero ? 'h1' : 'h2';
 
   // Section progress during pinning: start start -> end end
   const p = useSectionProgress(outerRef, 'pin');
@@ -375,6 +466,30 @@ export default function PlantAnatomy({
   const isReduced = Boolean(useReducedMotion()) || staticReveal;
   const isInView = useInView(stageRef, { amount: 0.5 });
 
+  /*
+   * Hero intro. introQ runs 0 -> 1: 0 = intro copy over the overview, 1 = anatomy HUD active.
+   * Normal motion: driven by scroll over the first HERO_INTRO_SVH of the pinned runway (desktop puts the
+   * stage tour after it; phones pin only for the crossfade). Reduced motion / capture: no scrubbing, the
+   * "Explore the plant" button switches instantly.
+   */
+  const introScroll = isHero && !isReduced;
+  const tourSvh = isPinned ? 40 + nodes.length * 35 : 0;
+  const introSvh = introScroll ? (isPinned ? HERO_INTRO_SVH : HERO_INTRO_SVH_MOBILE) : 0;
+  const runwaySvh = tourSvh + introSvh;
+  const introEnd = runwaySvh > 0 ? introSvh / runwaySvh : 0; // share of section progress used by the intro
+  const introManual = useMotionValue(0);
+  const introQ = useTransform([p, introManual], ([v, m]: number[]) =>
+    !isHero ? 1 : introScroll ? (introEnd > 0 ? Math.min(1, Math.max(0, v / introEnd)) : 1) : m
+  );
+  // Copy fades out and lifts first; the HUD fades in once the copy is mostly gone (no overlap of text)
+  const introOpacity = useTransform(introQ, [0.06, 0.5], [1, 0]);
+  const introY = useTransform(introQ, [0.06, 0.5], [0, -36]);
+  const introVisibility = useTransform(introQ, (v) => (v >= 0.5 ? 'hidden' : 'visible'));
+  const introScrimOpacity = useTransform(introQ, [0.1, 0.75], [1, 0]);
+  const heroHudOpacity = useTransform(introQ, [0.45, 0.95], [0, 1]);
+  const heroHudY = useTransform(introQ, [0.45, 0.95], [20, 0]);
+  const heroHudVisibility = useTransform(introQ, (v) => (v <= 0.45 ? 'hidden' : 'visible'));
+
   const [stageSize, setStageSize] = useState({ vw: 1280, vh: 720 });
   const [isMobile, setIsMobile] = useState(false);
   const [ambientOn, setAmbientOn] = useState<boolean>(true);
@@ -402,6 +517,8 @@ export default function PlantAnatomy({
   const [isTouring, setIsTouring] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
   const [imageError, setImageError] = useState(false);
+  // null = WebGL depth layer still loading, true = showing, false = unavailable (flat <Image> stays)
+  const [depthReady, setDepthReady] = useState<boolean | null>(null);
   const [isDebug, setIsDebug] = useState(debug);
   const [debugCoords, setDebugCoords] = useState<{ panX: number; panY: number } | null>(null);
   const [showHint, setShowHint] = useState(false);
@@ -426,9 +543,6 @@ export default function PlantAnatomy({
   const pull = useTransform(speed, [0, 700], [1, 0.95]); // pull back slightly mid-flight
   const pullSpring = useSpring(pull, PULL_SPRING);
   const cameraScale = useTransform([scaleMV, pullSpring], (v: number[]) => (isReduced ? v[0] ?? 1 : (v[0] ?? 1) * (v[1] ?? 1)));
-  const fogX = useTransform(x, (v) => (isReduced ? 0 : v * 0.85));
-  const fogY = useTransform(y, (v) => (isReduced ? 0 : v * 0.85));
-  const markerScale = useTransform(cameraScale, (s) => (s > 0 ? 1 / s : 1));
 
   /* debug flag from the URL */
   useEffect(() => {
@@ -439,14 +553,23 @@ export default function PlantAnatomy({
   /* hint timers cleanup */
   useEffect(() => () => hintTimers.current.forEach(clearTimeout), []);
 
-  /* first-view hint for free mode */
-  useEffect(() => {
-    if (isPinned || !isInView || isReduced || hintShown.current) return;
+  const showHintOnce = useCallback(() => {
+    if (hintShown.current) return;
     hintShown.current = true;
     setShowHint(true);
     setIsPulsing(true);
     hintTimers.current = [setTimeout(() => setIsPulsing(false), 2400), setTimeout(() => setShowHint(false), 4000)];
-  }, [isInView, isReduced, isPinned]);
+  }, []);
+
+  /* first-view hint for the free-mode section (the hero shows it once its HUD has faded in) */
+  useEffect(() => {
+    if (isPinned || isHero || !isInView || isReduced) return;
+    showHintOnce();
+  }, [isInView, isReduced, isPinned, isHero, showHintOnce]);
+
+  useMotionValueEvent(introQ, 'change', (v) => {
+    if (isHero && !isReduced && v >= 0.95) showHintOnce();
+  });
 
   /* stage size and breakpoint */
   useEffect(() => {
@@ -471,29 +594,34 @@ export default function PlantAnatomy({
     };
   }, []);
 
-  /* Programmatic scroll helper to target a specific stage center in pinned mode */
-  const scrollToStage = useCallback(
-    (targetIndex: number, instant: boolean = isReduced) => {
+  /* Programmatic scroll helpers: section progress v (0..1 of the pinned runway) -> page scroll */
+  const scrollToProgress = useCallback(
+    (v: number, instant: boolean = isReduced) => {
       const outerEl = outerRef.current;
       if (!outerEl || typeof window === 'undefined') return;
+      const outerTop = outerEl.getBoundingClientRect().top + window.scrollY;
+      scrollToY(outerTop + v * Math.max(0, outerEl.offsetHeight - window.innerHeight), instant);
+    },
+    [isReduced]
+  );
+
+  /* Target a specific stage center in pinned mode (the tour starts after the hero intro, if any) */
+  const scrollToStage = useCallback(
+    (targetIndex: number, instant: boolean = isReduced) => {
       const n = nodes.length;
       const clampedIndex = Math.max(0, Math.min(n - 1, targetIndex));
-      const pTarget = clampedIndex === 0 ? 0.06 : 0.12 + ((clampedIndex - 0.5) / (n - 1)) * 0.88;
-      const rect = outerEl.getBoundingClientRect();
-      const outerTop = rect.top + window.scrollY;
-      const outerHeight = outerEl.offsetHeight;
-      const innerHeight = window.innerHeight;
-      const targetY = outerTop + pTarget * Math.max(0, outerHeight - innerHeight);
-      scrollToY(targetY, instant);
+      const tourP = clampedIndex === 0 ? 0.06 : 0.12 + ((clampedIndex - 0.5) / (n - 1)) * 0.88;
+      scrollToProgress(introEnd + tourP * (1 - introEnd), instant);
     },
-    [nodes.length, isReduced]
+    [nodes.length, isReduced, introEnd, scrollToProgress]
   );
 
   /* stage from scroll in pinned mode */
   const n = nodes.length;
   useMotionValueEvent(p, 'change', (v) => {
     if (!isPinned) return;
-    const index = v < 0.12 ? 0 : Math.min(n - 1, 1 + Math.floor(((v - 0.12) / 0.88) * (n - 1)));
+    const t = introEnd > 0 ? Math.max(0, (v - introEnd) / (1 - introEnd)) : v; // tour progress
+    const index = t < 0.12 ? 0 : Math.min(n - 1, 1 + Math.floor(((t - 0.12) / 0.88) * (n - 1)));
     if (index !== lastIndexRef.current) {
       lastIndexRef.current = index;
       const targetNode = nodes[index];
@@ -503,16 +631,8 @@ export default function PlantAnatomy({
       }
     }
 
-    // Hint fires the first time p > 0.1 in pinned mode
-    if (!hintShown.current && v > 0.1 && !isReduced) {
-      hintShown.current = true;
-      setShowHint(true);
-      setIsPulsing(true);
-      hintTimers.current = [
-        setTimeout(() => setIsPulsing(false), 2400),
-        setTimeout(() => setShowHint(false), 4000),
-      ];
-    }
+    // Section variant: hint fires the first time p > 0.1 (iris open); the hero uses introQ instead
+    if (!isHero && v > 0.1 && !isReduced) showHintOnce();
   });
 
   /* optional URL hash sync */
@@ -571,6 +691,17 @@ export default function PlantAnatomy({
 
   const toggleTour = useCallback(() => setIsTouring((t) => !t), []);
 
+  /* "Explore the plant": scroll to where the anatomy is active, or switch instantly without scrubbing */
+  const revealTour = useCallback(() => {
+    if (introScroll) {
+      if (isPinned) scrollToStage(0);
+      else scrollToProgress(1);
+      return;
+    }
+    introManual.set(1);
+    setTimeout(() => (isMobile ? mobilePills : desktopPills).current[activeIndex]?.focus(), 60);
+  }, [introScroll, isPinned, scrollToStage, scrollToProgress, introManual, isMobile, activeIndex]);
+
   /* auto tour (only active in free mode) */
   useEffect(() => {
     if (isPinned || !isTouring || !isInView || isReduced) return;
@@ -595,14 +726,44 @@ export default function PlantAnatomy({
   const canvasW = Math.max(1.5 * vw, 1.5 * vh * imageAspect);
   const canvasH = canvasW / imageAspect;
 
+  /* 2.5D depth camera: reads x / y / cameraScale, adds drone hover, breathing zoom and depth parallax */
+  const depth = usePlantDepth({
+    x,
+    y,
+    scale: cameraScale,
+    canvasW,
+    canvasH,
+    focusDepth: activeNode?.depth ?? 0.4,
+    enabled: !isReduced,
+  });
+  const depthOn = depth3d !== false;
+  const fogX = useTransform(depth.camX, (v) => (isReduced ? 0 : v * 0.85));
+  const fogY = useTransform(depth.camY, (v) => (isReduced ? 0 : v * 0.85));
+  const markerScale = useTransform(depth.camScale, (s) => (s > 0 ? 1 / s : 1));
+
   useEffect(() => {
     if (!activeNode) return;
-    const s = isMobile ? Math.max(1, 1 + (activeNode.scale - 1) * MOBILE_ZOOM_FACTOR) : Math.max(1, activeNode.scale);
-    const u = (activeNode.panX / 100 - 0.5) * canvasW;
-    const v = (activeNode.panY / 100 - 0.5) * canvasH;
+    const view = activeNode.view;
+    const zoom = view?.scale ?? activeNode.scale;
+    const s0 = isMobile ? Math.max(1, 1 + (zoom - 1) * MOBILE_ZOOM_FACTOR) : Math.max(1, zoom);
+    const u = ((view?.x ?? activeNode.panX) / 100 - 0.5) * canvasW;
+    const v = ((view?.y ?? activeNode.panY) / 100 - 0.5) * canvasH;
     const a = isMobile ? ANCHORS.MOBILE : ANCHORS.DESKTOP;
-    const s2 = s * 0.95; // safety for the mid-flight pull-back
-    const maxX = Math.max(0, (s2 * canvasW - vw) / 2);
+    const edgeReveal = (view?.edgeRevealVw ?? 0) * vw; // px the photo edge may enter the viewport
+    // Stages near the photo's edge (crusher, packing, power) can't reach the anchor at their authored zoom
+    // without revealing the edge, so the clamp would leave them under the HUD. Zoom in just enough for the
+    // focal point to land on the anchor: smallest s with |anchor - s*off| <= (PULL_SAFETY*s*L - V) / 2.
+    const k = PULL_SAFETY / 2;
+    const fit = (off: number, anchor: number, L: number, V: number) => {
+      const lo = k * L - off;
+      const hi = k * L + off;
+      return lo <= 0 || hi <= 0 ? Infinity : Math.max((V / 2 + anchor) / hi, (V / 2 - anchor) / lo);
+    };
+    const sFit = view ? s0 : Math.max(fit(u, a.ax * vw, canvasW, vw), fit(v, a.ay * vh, canvasH, vh));
+    const sCap = Math.max(s0, (SOURCE_PX_WIDTH * MAX_UPSCALE) / canvasW);
+    const s = Math.min(Math.max(s0, sFit), sCap);
+    const s2 = s * PULL_SAFETY; // safety for the mid-flight pull-back
+    const maxX = Math.max(0, (s2 * canvasW - vw) / 2) + edgeReveal;
     const maxY = Math.max(0, (s2 * canvasH - vh) / 2);
     const tx = Math.min(maxX, Math.max(-maxX, a.ax * vw - s * u));
     const ty = Math.min(maxY, Math.max(-maxY, a.ay * vh - s * v));
@@ -652,14 +813,14 @@ export default function PlantAnatomy({
       className={`relative ${
         isHero ? 'bg-[#0B1245]' : `${Z.plant} -mt-10 rounded-t-[40px] bg-slate-50 shadow-[0_-20px_60px_rgba(0,0,60,0.25)]`
       } ${className}`}
-      style={isPinned ? { height: `calc(100svh + ${40 + nodes.length * 35}svh)` } : undefined}
+      style={runwaySvh > 0 ? { height: `calc(100svh + ${runwaySvh}svh)` } : undefined}
     >
       <section
         data-tone="dark"
         aria-label={isHero ? 'Inside the Sangjani plant' : 'Plant anatomy'}
         className={`relative isolate h-[100svh] min-h-[640px] w-full select-none overflow-hidden bg-[#0B1245] text-white ${
           isHero ? '' : 'rounded-t-[40px]'
-        } ${isPinned ? 'sticky top-0' : ''}`}
+        } ${runwaySvh > 0 ? 'sticky top-0' : ''}`}
       >
         {/* Ambient Layer: calm, layered aerial echo around the unexpanded iris window */}
         {showAmbient && (
@@ -715,12 +876,24 @@ export default function PlantAnatomy({
             }}
             className={`absolute inset-0 touch-pan-y overflow-hidden ${isDebug ? 'cursor-crosshair' : ''}`}
           >
+            {/* WebGL depth picture: in the Stage, never inside the CSS-scaled canvas div (that would blur it) */}
+            {depthOn && (
+              <PlantDepthCanvas
+                depth={depth}
+                src={depth3d.src}
+                srcSmall={depth3d.srcSmall}
+                depthSrc={depth3d.depthSrc}
+                onStatus={setDepthReady}
+              />
+            )}
+
             <motion.div
               ref={canvasRef}
-              style={{ width: canvasW, height: canvasH, marginLeft: -canvasW / 2, marginTop: -canvasH / 2, x, y, scale: cameraScale }}
+              style={{ width: canvasW, height: canvasH, marginLeft: -canvasW / 2, marginTop: -canvasH / 2, x: depth.camX, y: depth.camY, scale: depth.camScale }}
               className={`absolute left-1/2 top-1/2 origin-center transform-gpu ${isMoving ? 'will-change-transform' : ''}`}
             >
-              {imageError ? (
+              {/* Flat picture: first paint, and the fallback whenever WebGL2 is unavailable */}
+              {depthOn && depthReady === true ? null : imageError ? (
                 <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(160deg,#1c2a6b,#0A0F1F)] bg-[linear-gradient(rgba(255,255,255,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.06)_1px,transparent_1px)] bg-[size:48px_48px] p-8 text-center">
                   <span className="font-mono text-sm text-[#F4D5AB]">Aerial placeholder: {imageSrc}</span>
                 </div>
@@ -735,45 +908,34 @@ export default function PlantAnatomy({
                   placeholder={blurDataURL ? 'blur' : 'empty'}
                   blurDataURL={blurDataURL}
                   onError={() => setImageError(true)}
-                  className="select-none object-cover"
+                  className="select-none object-cover [mask-image:linear-gradient(to_right,transparent,black_2.5%,black_97.5%,transparent)]"
                 />
               )}
 
-              {nodes.map((n) => {
-                if (n.id === 'overview') return null;
-                const on = n.id === activeNode.id;
-                return (
-                  <motion.button
-                    key={n.id}
-                    type="button"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    onClick={(e) => {
-                      if (isDebug) return e.stopPropagation();
-                      selectIndex(nodes.indexOf(n));
-                    }}
-                    style={{ left: `${n.panX}%`, top: `${n.panY}%`, scale: markerScale }}
-                    className={`group absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center md:size-7 ${isDebug ? 'pointer-events-none' : 'cursor-pointer'}`}
-                  >
-                    {on ? (
-                      <>
-                        <span className="absolute inset-0 rounded-full bg-[#F4D5AB]/20" />
-                        <span className="absolute inset-0 rounded-full border-2 border-[#F4D5AB]" />
-                        <span className="size-2.5 rounded-full bg-[#F4D5AB] shadow-md md:size-3.5" />
-                      </>
-                    ) : (
-                      <span className="flex size-4 items-center justify-center rounded-full border border-white/70 bg-black/40 transition-colors group-hover:border-[#F4D5AB] md:size-5">
-                        <span className="size-1.5 rounded-full bg-white/70 transition-colors group-hover:bg-[#F4D5AB] md:size-2" />
-                      </span>
-                    )}
-                  </motion.button>
-                );
-              })}
+              {/* Markers belong to the anatomy: in the hero they fade in with the HUD */}
+              <motion.div
+                className="absolute inset-0"
+                style={isHero ? { opacity: heroHudOpacity, visibility: heroHudVisibility } : undefined}
+              >
+                {nodes.map((n, i) =>
+                  n.id === 'overview' ? null : (
+                    <PlantMarker
+                      key={n.id}
+                      node={n}
+                      active={n.id === activeNode.id}
+                      depth={depth}
+                      markerScale={markerScale}
+                      isDebug={isDebug}
+                      onSelect={() => selectIndex(i)}
+                    />
+                  )
+                )}
+              </motion.div>
 
               {isDebug && debugCoords && (
                 <motion.div
-                  style={{ left: `${debugCoords.panX}%`, top: `${debugCoords.panY}%`, scale: markerScale }}
-                  className="pointer-events-none absolute z-50 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+                  style={{ left: `${debugCoords.panX}%`, top: `${debugCoords.panY}%`, x: '-50%', y: '-50%', scale: markerScale }}
+                  className="pointer-events-none absolute z-50 flex items-center justify-center"
                 >
                   <div className="size-4 rounded-full border-2 border-red-500 bg-red-500/30" />
                   <div className="absolute h-px w-8 bg-red-400" />
@@ -804,7 +966,13 @@ export default function PlantAnatomy({
 
           {/* HUD */}
           <motion.div
-            style={irisActive ? { opacity: hudOpacity } : undefined}
+            style={
+              irisActive
+                ? { opacity: hudOpacity }
+                : isHero
+                  ? { opacity: heroHudOpacity, y: heroHudY, visibility: heroHudVisibility }
+                  : undefined
+            }
             className="pointer-events-none absolute inset-0 z-20"
           >
             {/* Desktop HUD */}
@@ -818,13 +986,13 @@ export default function PlantAnatomy({
               <div className="pointer-events-auto flex h-full flex-col justify-between py-2">
                 <div>
                   <span className="font-mono text-sm text-[#F4D5AB]">{isHero ? 'Inside the Sangjani plant' : 'Plant anatomy'}</span>
-                  <Heading
+                  <h2
                     className={`mt-1 font-display font-bold tracking-tight text-white ${
                       isHero ? 'mb-3 text-3xl leading-[1.05] lg:text-[2.75rem]' : 'mb-6 text-2xl lg:text-3xl'
                     }`}
                   >
                     From limestone to bag
-                  </Heading>
+                  </h2>
                   {isHero && (
                     <p className="mb-6 max-w-[34ch] text-sm leading-relaxed text-white/75 lg:text-base [@media(max-height:820px)]:hidden">
                       Take a guided flight through the Sangjani plant, one stage at a time.
@@ -877,9 +1045,9 @@ export default function PlantAnatomy({
               >
                 <div>
                   <span className="font-mono text-xs text-[#F4D5AB]">{isHero ? 'Inside the Sangjani plant' : 'Plant anatomy'}</span>
-                  <Heading className={`font-display font-bold tracking-tight text-white ${isHero ? 'text-2xl leading-tight' : 'text-lg'}`}>
+                  <h2 className={`font-display font-bold tracking-tight text-white ${isHero ? 'text-2xl leading-tight' : 'text-lg'}`}>
                     From limestone to bag
-                  </Heading>
+                  </h2>
                   {showQuote && (
                     <button type="button" onClick={onRequestQuote} className={`${QUOTE_BTN} mt-3 px-4 py-1.5 text-xs`}>
                       Request a bulk quote
@@ -918,6 +1086,56 @@ export default function PlantAnatomy({
               <PillList nodes={nodes} activeIndex={activeIndex} variant="mobile" refs={mobilePills} onSelect={selectIndex} />
             </div>
           </motion.div>
+
+          {/* Hero intro: headline over the overview aerial; scrolling fades it out and the anatomy in */}
+          {isHero && (
+            <>
+              <motion.div
+                aria-hidden="true"
+                style={{ opacity: introScrimOpacity }}
+                className="pointer-events-none absolute inset-0 z-[15] bg-[linear-gradient(to_top,rgba(10,15,31,0.92),rgba(10,15,31,0.4)_55%,rgba(10,15,31,0.2))] md:bg-[linear-gradient(to_right,rgba(10,15,31,0.88),rgba(10,15,31,0.5)_45%,rgba(10,15,31,0.12))]"
+              />
+              <motion.div
+                style={{ opacity: introOpacity, y: introY, visibility: introVisibility }}
+                className="absolute inset-0 z-[25] flex flex-col justify-end px-6 pb-28 pt-28 md:justify-center md:px-14 md:pb-24 lg:px-20"
+              >
+                <div className="max-w-2xl">
+                  <span className="font-mono text-xs uppercase tracking-[0.18em] text-[#F4D5AB] md:text-sm">{heroIntro.eyebrow}</span>
+                  <h1 className="mt-3 font-display text-4xl font-bold leading-[1.04] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                    {heroIntro.title}
+                  </h1>
+                  <p className="mt-5 max-w-xl text-base leading-relaxed text-white/80 md:text-lg">{heroIntro.sub}</p>
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                    {onRequestQuote && (
+                      <button type="button" onClick={onRequestQuote} className={`${QUOTE_BTN} px-6 py-3 text-sm md:text-base`}>
+                        Request a bulk quote
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={revealTour}
+                      className={`flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20 md:text-base ${FOCUS}`}
+                    >
+                      Explore the plant
+                      <ChevronDown className="size-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                  {showMockNotice && (
+                    <p className="mt-5 font-mono text-[11px] text-white/60 md:hidden">Illustrative image, sample figures</p>
+                  )}
+                </div>
+                {introScroll && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-white/70 md:bottom-8"
+                  >
+                    <span>Scroll to explore</span>
+                    <ChevronDown className="size-4" />
+                  </div>
+                )}
+              </motion.div>
+            </>
+          )}
 
           {showMockNotice && (
             <motion.div

@@ -1,34 +1,16 @@
-'use client';
+import HomeV43Page from '../versions/home-v4-3/source/page';
 
-import React, { useState } from 'react';
-import FectoNavbar from '@/components/FectoNavbar';
-import QuoteModal from '@/components/QuoteModal';
-import SampleHomeV3Content from '@/components/SampleHomeV3Content';
-
+/**
+ * Homepage — serves the V4.3 composition.
+ *
+ * Plant Anatomy is the hero (intro copy over the 3D plant aerial, scroll crossfade into the
+ * stage tour), followed by Stats, Founder Legacy, Company History, Stakeholder paths, Products
+ * (rotating 3D bag), Sustainability, Iconic Projects and the footer.
+ *
+ * Edit versions/home-v4-3/source/ to change it. The previous homepage composition is still
+ * available at /sample-v3, and the isolated V4.3 preview at /home-v4-3. Page title and
+ * description come from app/layout.tsx.
+ */
 export default function HomePage() {
-  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
-  const [, setSelectedProduct] = useState<string>('');
-
-  const handleOpenQuote = (productName?: string) => {
-    if (productName) {
-      setSelectedProduct(productName);
-    }
-    setQuoteModalOpen(true);
-  };
-
-  return (
-    <main className="relative isolate min-h-screen bg-[#F1F5F9] text-[#000080] selection:bg-[#F4D5AB] selection:text-[#000080] overflow-x-clip">
-      {/* 1. FLOATING BRAND NAVBAR */}
-      <FectoNavbar onCtaClick={() => handleOpenQuote()} />
-
-      {/* 2. V3 HOME PAGE EXPERIENCE (Modern Editorial Experience) */}
-      <SampleHomeV3Content onRequestQuote={handleOpenQuote} />
-
-      {/* 3. INTERACTIVE QUOTE MODAL */}
-      <QuoteModal
-        isOpen={quoteModalOpen}
-        onClose={() => setQuoteModalOpen(false)}
-      />
-    </main>
-  );
+  return <HomeV43Page />;
 }

@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { AnimatePresence, motion } from 'framer-motion';
 import { ShieldCheck, Download, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useMotionPrefs } from '../hooks/useMotionPrefs';
-import { EASE, DUR, Z } from '../lib/motion';
+import { DUR, Z } from '../lib/motion';
 import { SectionReveal } from './SectionReveal';
+import CementBag3D from './CementBag3D';
 
 /* ========================================================================== */
 /* DATA MODEL & DESIGN TOKENS                                                 */
@@ -110,16 +110,30 @@ function BagVisual({
   data,
   imageError,
   onError,
-  simple,
-  className,
+  rotate,
+  size,
 }: {
   data: GradeData;
   imageError: boolean;
   onError: () => void;
-  simple: boolean;
-  className: string;
+  rotate: boolean;
+  size: { w: number; h: number };
 }) {
-  const visual = imageError ? (
+  if (!imageError) {
+    return (
+      <CementBag3D
+        src={data.bagSrc}
+        label={`${data.name}, 50 kg bag, slowly rotating 3D view`}
+        width={size.w}
+        height={size.h}
+        rotate={rotate}
+        onError={onError}
+      />
+    );
+  }
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size.w, height: size.h }}>
     <div className="flex h-full w-full flex-col items-center justify-center rounded-2xl border border-white/20 bg-white/10 p-6 text-center shadow-2xl">
       <svg
         viewBox="0 0 100 130"
@@ -156,36 +170,6 @@ function BagVisual({
       <span className="font-mono text-xs font-semibold text-[#F4D5AB]">{data.name}</span>
       <span className="mt-1 text-[10px] text-white/60">{data.bagCaption}</span>
     </div>
-  ) : (
-    <Image
-      src={data.bagSrc}
-      alt={`${data.name} 50kg bag`}
-      fill
-      priority
-      sizes="320px"
-      onError={onError}
-      className="object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.85)] filter contrast-[1.05]"
-    />
-  );
-
-  if (simple) {
-    return <div className={`relative flex items-center justify-center ${className}`}>{visual}</div>;
-  }
-
-  return (
-    <div className={`relative flex items-center justify-center ${className}`}>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={data.tabLabel}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: DUR.fast, ease: EASE }}
-          className="relative h-full w-full"
-        >
-          {visual}
-        </motion.div>
-      </AnimatePresence>
     </div>
   );
 }
@@ -247,8 +231,10 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
   const [activeGrade, setActiveGrade] = useState<ProductGrade>('opc');
   const [imageError, setImageError] = useState(false);
   const [bgImageError, setBgImageError] = useState(false);
-  const { simple: prefersSimple } = useMotionPrefs();
+  const { simple: prefersSimple, reduced } = useMotionPrefs();
   const simple = prefersSimple || staticReveal;
+  // The bag turns on phones too; only reduced motion and capture mode hold it facing front
+  const rotateBag = !reduced && !staticReveal;
   const currentData = SPECS[activeGrade];
 
   useEffect(() => {
@@ -385,8 +371,9 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
               viewBox="0 0 1000 600"
               preserveAspectRatio="none"
             >
+              {/* Callouts end just outside the rotating bag's sweep (half-diagonal ~130px), so they never cut through it */}
               <path
-                d="M 280 140 L 380 140 L 440 220"
+                d="M 280 140 L 330 140 L 352 176"
                 fill="none"
                 stroke="#F4D5AB"
                 strokeWidth="1.5"
@@ -394,7 +381,7 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                 strokeOpacity="0.45"
               />
               <path
-                d="M 720 280 L 620 280 L 560 300"
+                d="M 720 280 L 670 280 L 648 296"
                 fill="none"
                 stroke="#F4D5AB"
                 strokeWidth="1.5"
@@ -402,7 +389,7 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                 strokeOpacity="0.45"
               />
               <path
-                d="M 280 440 L 380 440 L 440 380"
+                d="M 280 440 L 330 440 L 352 404"
                 fill="none"
                 stroke="#F4D5AB"
                 strokeWidth="1.5"
@@ -410,38 +397,37 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                 strokeOpacity="0.45"
               />
               <circle cx="280" cy="140" r="3" fill="#F4D5AB" fillOpacity="0.7" />
-              <circle cx="440" cy="220" r="3.5" fill="#F4D5AB" />
+              <circle cx="352" cy="176" r="3.5" fill="#F4D5AB" />
               <circle cx="720" cy="280" r="3" fill="#F4D5AB" fillOpacity="0.7" />
-              <circle cx="560" cy="300" r="3.5" fill="#F4D5AB" />
+              <circle cx="648" cy="296" r="3.5" fill="#F4D5AB" />
               <circle cx="280" cy="440" r="3" fill="#F4D5AB" fillOpacity="0.7" />
-              <circle cx="440" cy="380" r="3.5" fill="#F4D5AB" />
+              <circle cx="352" cy="404" r="3.5" fill="#F4D5AB" />
             </svg>
 
-            {/* Composed centre bag: no tilt, float, parallax, or scrub zoom */}
+            {/* Centre bag: slow 360° turn on its own turntable (pauses on hover, static for reduced motion) */}
             <div className="absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center">
               <SectionReveal simple={simple} delay={0.08} y={0} duration={DUR.slow}>
                 <div className="relative flex flex-col items-center">
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute bottom-5 left-1/2 h-[70px] w-[420px] max-w-[80%] -translate-x-1/2 [background:radial-gradient(ellipse_at_center,rgba(244,213,171,0.20),transparent_70%)]"
-                  />
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute bottom-6 left-1/2 h-8 w-56 -translate-x-1/2 rounded-full bg-black/90 blur-xl shadow-[0_35px_70px_-15px_rgba(0,0,0,0.9)]"
+                    className="pointer-events-none absolute bottom-10 left-1/2 h-[70px] w-[420px] max-w-[80%] -translate-x-1/2 [background:radial-gradient(ellipse_at_center,rgba(244,213,171,0.20),transparent_70%)]"
                   />
                   <BagVisual
                     data={currentData}
                     imageError={imageError}
                     onError={() => setImageError(true)}
-                    simple={simple}
-                    className="h-[420px] w-[280px]"
+                    rotate={rotateBag}
+                    size={{ w: 300, h: 430 }}
                   />
-                  <div className="pointer-events-none mt-2 text-center">
+                  <div className="pointer-events-none mt-1 text-center">
                     <div className="font-sans text-sm font-semibold tracking-wide text-white">
                       {currentData.name}
                     </div>
                     <div className="font-mono text-xs text-white/60">
                       {currentData.bagCaption}
+                    </div>
+                    <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-[#F4D5AB]/75">
+                      360° view · illustrative
                     </div>
                   </div>
                 </div>
@@ -466,10 +452,10 @@ export const ProductPortfolio: React.FC<ProductPortfolioProps> = ({
                 data={currentData}
                 imageError={imageError}
                 onError={() => setImageError(true)}
-                simple={simple}
-                className="h-[330px] w-[220px]"
+                rotate={rotateBag}
+                size={{ w: 230, h: 330 }}
               />
-              <div className="mt-2 text-center">
+              <div className="mt-1 text-center">
                 <div className="text-sm font-semibold tracking-wide text-white">
                   {currentData.name}
                 </div>

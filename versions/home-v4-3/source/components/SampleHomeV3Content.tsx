@@ -27,8 +27,8 @@ const SCREENSHOT_SAFE_MODE = false;
  * Sample Home Page Experience (V4.3)
  *
  * Features:
- * - Hero: Plant Anatomy drone tour (variant="hero"), open from the first frame, single viewport,
- *   page <h1>, primary quote action, and the "Fly through" tour. Replaces the former HeroSection carousel.
+ * - Hero: Plant Anatomy (variant="hero"): intro copy over the plant aerial, scroll crossfades into the anatomy, then scroll drives the stages,
+ *   with the page <h1> in the intro and a quote action ("Fly through" on mobile). Replaces the former HeroSection carousel.
  * - Stats Bento Section in normal flow below the hero.
  * - Founder Legacy (V4.3): executive-restraint reveals, static editorial background, and composed portrait.
  * - Company History (V4.3): compact sample timeline with one-time clip reveals and one scroll-linked rail.
@@ -42,7 +42,7 @@ export default function SampleHomeV3Content({
 }: SampleHomeV3ContentProps) {
   return (
     <div className="relative isolate">
-      {/* 1. Hero - Plant Anatomy drone tour (single viewport, free mode, no iris entrance) */}
+      {/* 1. Hero - Plant Anatomy drone tour (scroll-pinned stage tour on desktop, open from the first frame) */}
       <PlantAnatomy
         variant="hero"
         onRequestQuote={() => onRequestQuote()}
