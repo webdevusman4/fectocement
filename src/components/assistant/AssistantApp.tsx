@@ -7,9 +7,11 @@ import {
   ArrowUp,
   Calculator,
   CalendarCheck2,
+  ChevronDown,
   ChevronLeft,
   Copy,
   Check,
+  Cpu,
   Droplets,
   ExternalLink,
   Gauge,
@@ -44,7 +46,14 @@ interface Message {
 }
 
 const STORAGE_KEY = 'fecto-assistant-chat-v1';
+const MODEL_STORAGE_KEY = 'fecto-assistant-model-v1';
 const MAX_INPUT = 2000;
+
+export const MODEL_OPTIONS = [
+  { id: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash Lite', tag: 'Fast · 500 RPD' },
+  { id: 'gemini-4-hydrogen', label: 'Gemini 4 Hydrogen', tag: 'Deep Reasoning' },
+  { id: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash', tag: 'Balanced' },
+] as const;
 
 const STARTER_CARDS: {
   label: string;
@@ -113,6 +122,7 @@ export default function AssistantApp() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-3.5-flash-lite');
 
   const abortRef = useRef<AbortController | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -140,6 +150,26 @@ export default function AssistantApp() {
       /* quota exceeded */
     }
   }, [messages]);
+
+  useEffect(() => {
+    try {
+      const savedModel = localStorage.getItem(MODEL_STORAGE_KEY);
+      if (savedModel && MODEL_OPTIONS.some((m) => m.id === savedModel)) {
+        setSelectedModel(savedModel);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const handleModelChange = (modelId: string) => {
+    setSelectedModel(modelId);
+    try {
+      localStorage.setItem(MODEL_STORAGE_KEY, modelId);
+    } catch {
+      /* ignore */
+    }
+  };
 
   /* scroll to bottom on new messages */
   useEffect(() => {
@@ -210,7 +240,7 @@ export default function AssistantApp() {
         const res = await fetch('/api/assistant', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: history }),
+          body: JSON.stringify({ messages: history, model: selectedModel }),
           signal: ac.signal,
         });
 
@@ -255,7 +285,7 @@ export default function AssistantApp() {
         abortRef.current = null;
       }
     },
-    [isStreaming, messages],
+    [isStreaming, messages, selectedModel],
   );
 
   const stopStreaming = useCallback(() => {
@@ -484,8 +514,30 @@ export default function AssistantApp() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            {/* Model Selector */}
+            <div className="relative">
+              <label htmlFor="model-select" className="sr-only">
+                Choose AI model
+              </label>
+              <select
+                id="model-select"
+                value={selectedModel}
+                onChange={(e) => handleModelChange(e.target.value)}
+                className="cursor-pointer appearance-none rounded-full border border-slate-200 bg-slate-50 py-1 pl-7 pr-7 text-xs font-semibold text-[#000080] shadow-sm outline-none transition hover:bg-slate-100 focus:border-[#000080]/40 focus:ring-2 focus:ring-[#000080]/15 max-w-[155px] sm:max-w-none truncate"
+                aria-label="Select AI model"
+              >
+                {MODEL_OPTIONS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label} ({m.tag})
+                  </option>
+                ))}
+              </select>
+              <Cpu className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#000080]/70" />
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            </div>
+
             {remaining !== null && (
-              <span className="rounded-full bg-[#F4D5AB]/40 px-3 py-1 text-xs font-semibold text-[#000080]">
+              <span className="hidden sm:inline-flex rounded-full bg-[#F4D5AB]/40 px-3 py-1 text-xs font-semibold text-[#000080]">
                 {remaining} question{remaining !== 1 ? 's' : ''} left today
               </span>
             )}

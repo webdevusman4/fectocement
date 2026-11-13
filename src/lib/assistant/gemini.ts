@@ -15,10 +15,35 @@ export interface GeminiContent {
   parts: { text: string }[];
 }
 
-export function geminiModels(): string[] {
-  const primary = process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash';
-  const fallback = process.env.GEMINI_FALLBACK_MODEL?.trim() || 'gemini-3.5-flash-lite';
-  return Array.from(new Set([primary, fallback].filter(Boolean)));
+export const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
+
+export const MODEL_OPTIONS = [
+  { id: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash Lite', tag: 'Fast · 500 RPD', default: true },
+  { id: 'gemini-4-hydrogen', label: 'Gemini 4 Hydrogen', tag: 'Deep Reasoning' },
+  { id: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash', tag: 'Balanced' },
+] as const;
+
+export type SupportedModelId = typeof MODEL_OPTIONS[number]['id'];
+
+export function geminiModels(preferred?: string): string[] {
+  const parseList = (val?: string) =>
+    (val || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+  const primary = parseList(process.env.GEMINI_MODEL);
+  const fallback = parseList(process.env.GEMINI_FALLBACK_MODEL);
+
+  const configured = [...primary, ...fallback];
+  const defaults: string[] = [DEFAULT_MODEL, 'gemini-4-hydrogen', 'gemini-3.8-flash'];
+  const base = configured.length > 0 ? configured : defaults;
+
+  if (preferred && preferred.trim()) {
+    return Array.from(new Set([preferred.trim(), ...base]));
+  }
+
+  return Array.from(new Set(base));
 }
 
 export function openGeminiStream(opts: {

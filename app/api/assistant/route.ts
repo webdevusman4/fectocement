@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     return fail(503, 'not_configured', 'The assistant is not switched on yet. Please try again later.');
   }
 
-  let payload: { messages?: unknown };
+  let payload: { messages?: unknown; model?: unknown };
   try {
     payload = await req.json();
   } catch {
@@ -72,6 +72,8 @@ export async function POST(req: NextRequest) {
   }
   const turns = sanitize(payload?.messages);
   if (!turns) return fail(400, 'bad_request', 'Please type a question first.');
+
+  const preferredModel = typeof payload?.model === 'string' ? payload.model.trim() : undefined;
 
   const quota = takeQuota(visitorId(req));
   if (!quota.ok) return fail(429, quota.reason, quota.message);
@@ -82,7 +84,7 @@ export async function POST(req: NextRequest) {
   }));
 
   let lastStatus = 0;
-  for (const model of geminiModels()) {
+  for (const model of geminiModels(preferredModel)) {
     let upstream: Response;
     try {
       upstream = await openGeminiStream({ apiKey, model, system: ASSISTANT_SYSTEM_PROMPT, contents, signal: req.signal });
@@ -100,6 +102,7 @@ export async function POST(req: NextRequest) {
           'Cache-Control': 'no-store',
           'X-Accel-Buffering': 'no',
           'X-Assistant-Remaining': String(quota.remainingForUser),
+          'X-Assistant-Model': model,
         },
       });
     }
