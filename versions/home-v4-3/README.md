@@ -11,6 +11,30 @@ This is the third isolated homepage iteration. It starts from `/home-v4-2`, appl
 - **Applied fixes:** `docs/home-v4-3-remediation.md`
 - **Production `/`:** untouched
 
+## Hero: Plant Anatomy (replaces the HeroSection carousel)
+
+The V4.3 page now opens on the Plant Anatomy drone tour. The former `HeroSection` carousel is no longer part of the composition. Section order: Plant Anatomy (hero) → Stats → Founder Legacy → Company History → Stakeholder paths → Products → Sustainability → Iconic Projects → Footer.
+
+- **`PlantAnatomy variant="hero"`:** no iris entrance. It clears the floating navbar, has no negative-margin sheet overlap, and adds a top scrim so the navbar stays legible. The default `variant="section"` keeps the original pinned iris behaviour.
+- **Intro, then anatomy (scroll crossfade):** the page opens on the plant aerial (overview, 3D hover running) with the intro copy: "Fecto Cement · Since 1981", the page `<h1>` "Building Pakistan's Future.", one line of copy, **Request a bulk quote**, **Explore the plant ↓** and a "Scroll to explore" cue. The stage list, card and markers are hidden. Scrolling crossfades in two steps, using opacity and transform only:
+  - First 50% of the intro runway: the copy fades out and lifts 36 px, and its dark scrim lifts.
+  - 45–95% of the runway: the stage list, card and markers fade in and rise 20 px.
+  - Then the stage tour continues. The "Scroll or pick a stage" hint shows once the anatomy is visible. `PLANT_HERO_INTRO` / the `heroIntro` prop holds the copy.
+- **Scroll-driven stages (desktop):** the intro uses the first 80svh of the pinned runway (`HERO_INTRO_SVH`). After that, scrolling moves the camera through all eight stages as before. Clicking a stage or **Explore the plant** scrolls to it.
+- **Phones:** a short 70svh pin (`HERO_INTRO_SVH_MOBILE`) covers only the crossfade. Then stages are tap-to-select with **Fly through**, and the mock disclosure sits under the intro buttons.
+- **Reduced motion and capture mode:** there is no scroll scrubbing. **Explore the plant** switches instantly to the anatomy and moves focus to the stage list.
+- **3D depth layer (`PlantDepth.tsx`):** the aerial is drawn with WebGL2. Each pixel moves by its depth from `depth.png`, so the hillside, plant and mountains separate. You see this in the slow drone hover, the breathing zoom, pointer or tilt drift, and the parallax while flying between stages. It reads the existing camera (`x`, `y`, `cameraScale`), so stages, springs, scroll pinning, cards and pills work as before.
+  - **Images:** `public/images/plant/plant-6000.webp` (desktop), `plant-4096.jpg` (phones and fallback) and `depth.png` (white = near). Each stage has a measured `depth` in `PLANT_NODES`.
+  - **Fallback:** the flat `next/image` shows first and is removed once WebGL is ready. It stays if WebGL2 is unavailable. Pass `depth3d={false}` to turn the layer off.
+  - **Markers:** markers stay on their buildings through `useDepthShift`. Centring now comes from the motion transform, because the old Tailwind translate classes were being overwritten by it.
+  - **Reduced motion and capture mode:** these settle to a still picture.
+  - **Tuning:** adjust the values in `DEPTH_3D` at the top of `PlantDepth.tsx`.
+- **Edge stages centred:** Crusher, Packing and Waste heat and solar sit close to the photo's edges. The edge limit used to stop them up to about 350 px short of the focal point, often behind the stage list or the card. The camera now zooms in just enough for each stage to reach the focal point (a 3.2–3.4× zoom on a 1366 px screen). The extra zoom is capped so the 6000 px photo is never stretched past 1.25×. On screens about 1920 px wide that cap leaves Crusher and Packing short of centre, but in the clear space. Phones were not affected.
+- **Mobile:** the "Illustrative image, sample figures" chip now sits above the spec card instead of overlapping the stage pills.
+- **Stats:** normal flow below the hero; the hero-driven highlight is gone.
+- **Stakeholder paths:** `overlapPrevious={false}` removes the negative margin it used to pull up over the plant's dark bottom band. It now continues the light Company History sheet.
+- **`HeroSection.tsx` kept:** it is still imported by the unrouted `SampleHomeContent` and `LegacyHomeV1Content` compositions.
+
 ## What changed from V4.2
 
 ### 1. Founder Legacy and Company History
@@ -47,7 +71,7 @@ This is the third isolated homepage iteration. It starts from `/home-v4-2`, appl
 - All entrance animations fire once.
 - Mobile and reduced-motion output is static.
 - Capture mode disables autoplay, pinning, scroll scrubbing, and the footer curtain.
-- Normal desktop still retains the Hero carousel and Plant tour; capture mode makes both deterministic.
+- The Plant Anatomy hero has no autoplay. On desktop, scrolling drives the stages. On mobile, the "Fly through" tour starts only when the visitor presses it. Capture mode keeps the hero static and unpinned.
 
 ## Capture mode
 
@@ -57,7 +81,7 @@ This is the third isolated homepage iteration. It starts from `/home-v4-2`, appl
 const SCREENSHOT_SAFE_MODE = false;
 ```
 
-Set it to `true` for full-page screenshot capture or static review. It makes all ten V4.3 sections deterministic while preserving layout and content.
+Set it to `true` for full-page screenshot capture or static review. It makes all nine V4.3 sections deterministic while preserving layout and content.
 
 ## Assets and standalone export
 

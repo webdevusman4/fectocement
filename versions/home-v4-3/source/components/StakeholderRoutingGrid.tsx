@@ -30,6 +30,11 @@ export interface StakeholderRoutingGridProps {
   onRequestQuote?: () => void;
   className?: string;
   staticReveal?: boolean;
+  /**
+   * true (default): pulls up over the previous section's dark bottom band (original placement after
+   * Plant Anatomy). false: normal flow, continuing a light section such as Company History.
+   */
+  overlapPrevious?: boolean;
 }
 
 export const STAKEHOLDER_CARDS: StakeholderCardItem[] = [
@@ -90,6 +95,7 @@ export const StakeholderRoutingGrid: React.FC<StakeholderRoutingGridProps> = ({
   onRequestQuote,
   className = '',
   staticReveal = false,
+  overlapPrevious = true,
 }) => {
   const { simple: prefersSimple } = useMotionPrefs();
   const simple = prefersSimple || staticReveal;
@@ -117,7 +123,11 @@ export const StakeholderRoutingGrid: React.FC<StakeholderRoutingGridProps> = ({
     <section
       id="stakeholders"
       data-tone="light"
-      className={`relative -mt-[8svh] w-full bg-[linear-gradient(to_bottom,rgba(238,243,249,0),#EEF3F9_8svh)] pb-24 pt-[16svh] sm:pb-32 md:-mt-[24svh] md:bg-[linear-gradient(to_bottom,rgba(238,243,249,0),#EEF3F9_22svh)] md:pt-[34svh] ${Z.path} ${sanitizedClassName}`}
+      className={`relative w-full pb-24 sm:pb-32 ${
+        overlapPrevious
+          ? '-mt-[8svh] bg-[linear-gradient(to_bottom,rgba(238,243,249,0),#EEF3F9_8svh)] pt-[16svh] md:-mt-[24svh] md:bg-[linear-gradient(to_bottom,rgba(238,243,249,0),#EEF3F9_22svh)] md:pt-[34svh]'
+          : 'bg-[linear-gradient(to_bottom,#F8FAFC,#EEF3F9_22svh)] pt-12 sm:pt-16'
+      } ${Z.path} ${sanitizedClassName}`}
       aria-labelledby="stakeholder-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
