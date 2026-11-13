@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Menu, ArrowRight, Globe } from 'lucide-react';
+import { ChevronDown, Menu, ArrowRight, Globe, Sparkles } from 'lucide-react';
 import FectoLogo from './FectoLogo';
 import CompanyDropdown from './CompanyDropdown';
 import InvestorsDropdown from './InvestorsDropdown';
@@ -365,6 +365,19 @@ export const FectoNavbar: React.FC<FectoNavbarProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* AI Assistant icon link */}
+              <Link
+                href="/assistant"
+                aria-label="AI assistant"
+                className={`hidden sm:flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
+                  isSmoked
+                    ? 'text-white/80 hover:bg-white/10 hover:text-white'
+                    : 'text-[#000080]/70 hover:bg-[#000080]/5 hover:text-[#000080]'
+                }`}
+              >
+                <Sparkles className="w-[18px] h-[18px]" />
+              </Link>
 
               {/* Desktop CTA Pill Button — Champagne Sand bg, Fecto Navy text */}
               <Link
