@@ -1,9 +1,12 @@
 {
   "name": "home-v4.3 \u2014 executive restraint + full remediation",
   "baseVersion": "versions/home-v4-2",
-  "liveRoute": "/home-v4-3",
+  "liveRoute": [
+    "/",
+    "/home-v4-3"
+  ],
   "scope": "Full V4.3 homepage composition: motion, interactions, capture behavior, accessibility, sample-data clarity, and preview config",
-  "productionRouteUnchanged": true,
+  "productionRouteUnchanged": false,
   "priorVersionsUnchanged": true,
   "approvedDirection": "Option A \u2014 Executive restraint",
   "routeMetadata": {
@@ -16,6 +19,11 @@
       "path": "source/components/CareersNewsDropdown.tsx",
       "sha256": "6126e6e0c988bad1d425d8f679d03736d9b83596dbb1050f25d50b55883e1d6a",
       "bytes": 12368
+    },
+    {
+      "path": "source/components/CementBag3D.tsx",
+      "sha256": "6e85c5da2728f1657269ef22308e618904f0b326aad30d89aeadb8377f736f17",
+      "bytes": 7508
     },
     {
       "path": "source/components/CompanyDropdown.tsx",
@@ -84,8 +92,8 @@
     },
     {
       "path": "source/components/ProductPortfolio.tsx",
-      "sha256": "8c073966ec414e8dfe88ff131aef0d6abc352f251bbd9de4e42f10c4d65ef20c",
-      "bytes": 22126
+      "sha256": "273622ad1baa08bd7070c1eb0fce41e0391c80e7641d4dff67c37158a8e0bffd",
+      "bytes": 21832
     },
     {
       "path": "source/components/ProductsDropdown.tsx",
@@ -193,7 +201,8 @@
     "docs/home-v4-3-motion.md",
     "docs/home-v4-3-final-three-sections.md",
     "versions/home-v4-3/README.md",
-    "versions/home-v4-3/manifest.json"
+    "versions/home-v4-3/manifest.json",
+    "app/page.tsx"
   ],
   "captureMode": {
     "sections": [
@@ -332,7 +341,8 @@
     "portraitPlacementBuild": "passed \u2014 44/44 static pages after Hero foreground composition change",
     "devFontMock": "build-only Google Fonts mock supplied to dev process; no app font source changed",
     "temporaryBrowserDependency": "installed outside repository in /tmp; no package.json change and no new binary asset in project",
-    "stagedDiffCheck": "clean after inherited trailing-whitespace normalization"
+    "stagedDiffCheck": "clean after inherited trailing-whitespace normalization",
+    "rootRoute": "tsc passed; dev / renders V4.3: one h1 \"Building Pakistan's Future.\", Plant Anatomy is the first section, WebGL canvas present, rotating bag with 6 faces at 300x430, no console errors after a fresh load"
   },
   "docs": [
     "docs/home-v4-3-motion.md",
@@ -432,6 +442,15 @@
       "headings": "intro holds the page h1; the HUD heading \"From limestone to bag\" is an h2",
       "reducedMotionAndCapture": "no scrubbing; Explore the plant sets introQ to 1 instantly and focuses the active stage pill",
       "validation": "tsc passed; dev page load: one h1, intro opacity 1 / visible, HUD and markers opacity 0 / hidden, section sticky, runway 4 viewports at 1366x768, no console errors. Scroll crossfade not observed live: the Browser pane was hidden (0 animation frames per second)"
-    }
+    },
+    "crusherViewReverted": "the hand-set Crusher view with a photo-edge reveal was removed on request (its navy band behind the stage list was unwanted); Crusher uses the edge-stage auto-zoom again and PlantDepth.tsx is back to the supplied shader"
+  },
+  "productionRoute": "app/page.tsx renders versions/home-v4-3/source/page.tsx (root layout metadata); previous homepage composition remains at /sample-v3",
+  "productBag3D": {
+    "component": "source/components/CementBag3D.tsx (CSS 3D box, framer-motion only)",
+    "faces": "front/back: bag-opc.png body (60,135)-(965,1462) of 1024x1536 on kraft; gussets: kraft with vertical FECTO CEMENT; caps: kraft; depth 0.24 x width; 7deg downward tilt; per-face angle shading",
+    "motion": "360deg every 18s, linear, continuous; pauses on hover and off-screen, resumes from the same angle; static front for reduced motion and capture; turns on phones",
+    "layout": "desktop 300x430, phones 230x330; callouts end outside the ~130px sweep (352/648 in the 1000-wide stage); static drop shadow replaced by a tracking contact shadow and turntable ring; caption adds \"360 view - illustrative\"",
+    "note": "bag-opc.png and bag-src.png are byte-identical"
   }
 }

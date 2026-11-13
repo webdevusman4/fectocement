@@ -193,11 +193,8 @@ void main(){
     float d = texture(uDepth, q).r - uFocus;
     q = uv - (uOff * d + (q - uCenter) * uDolly * d);
   }
-  // Feather the outer 2.5% of the photo into the section navy. Normal framings keep that band off-screen
-  // (the camera clamp holds the edge >= 2.5% outside); stages with a PlantNode.view edge reveal show it.
-  vec2 e = smoothstep(vec2(0.0), vec2(0.025), q) * smoothstep(vec2(0.0), vec2(0.025), 1.0 - q);
-  vec3 col = texture(uImg, clamp(q, vec2(0.0005), vec2(0.9995))).rgb;
-  outColor = vec4(mix(vec3(0.043, 0.071, 0.271), col, e.x * e.y), 1.0);
+  q = clamp(q, vec2(0.0005), vec2(0.9995));
+  outColor = vec4(texture(uImg, q).rgb, 1.0);
 }`;
 
 type CanvasProps = {

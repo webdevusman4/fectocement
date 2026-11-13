@@ -2,14 +2,14 @@
 
 This is the third isolated homepage iteration. It starts from `/home-v4-2`, applies the approved **Option A / Executive restraint** motion system, and includes a whole-home remediation pass based on `docs/home-v4-3-homepage-audit.md`.
 
-- **New live preview route:** `/home-v4-3`; `/` and `/home-v4-2` remain unchanged
+- **Live homepage:** `/` now serves V4.3 (`app/page.tsx` renders `source/page.tsx`; title and description come from `app/layout.tsx`). The previous homepage composition is still at `/sample-v3`.
+- **Preview route:** `/home-v4-3` (same page, with mock-preview metadata); `/home-v4-2` is unchanged
 - **Wrapper:** `app/home-v4-3/page.tsx` — includes route-specific mock-preview metadata
 - **Edit from here:** `versions/home-v4-3/source/`
 - **Motion audit:** `docs/home-v4-3-motion.md`
 - **Final-three section audit:** `docs/home-v4-3-final-three-sections.md`
 - **Whole-home audit:** `docs/home-v4-3-homepage-audit.md`
 - **Applied fixes:** `docs/home-v4-3-remediation.md`
-- **Production `/`:** untouched
 
 ## Hero: Plant Anatomy (replaces the HeroSection carousel)
 
@@ -34,6 +34,20 @@ The V4.3 page now opens on the Plant Anatomy drone tour. The former `HeroSection
 - **Stats:** normal flow below the hero; the hero-driven highlight is gone.
 - **Stakeholder paths:** `overlapPrevious={false}` removes the negative margin it used to pull up over the plant's dark bottom band. It now continues the light Company History sheet.
 - **`HeroSection.tsx` kept:** it is still imported by the unrouted `SampleHomeContent` and `LegacyHomeV1Content` compositions.
+
+## Products: rotating 3D cement bag
+
+`CementBag3D.tsx` builds the 50 kg bag as a CSS 3D box from the flat artwork. No new assets or libraries are needed.
+
+- **Box:**
+  - Front and back show the printed bag (`/images/bag-opc.png`, body cropped to 905×1327 of the 1024×1536 file; both faces carry the print, as real bags do).
+  - The side gussets are kraft with "FECTO CEMENT" printed vertically. Top and bottom caps are kraft.
+  - The depth is 24% of the width, and the box is tilted 7° so the top cap reads.
+  - Each face is shaded by its angle to a front-left key light.
+- **Motion:** one slow turn every 18 s, continuous. It pauses on hover and while off-screen, then resumes from the same angle. It holds the front view for reduced motion and capture mode, and still turns on phones.
+- **Stage:** a dashed turntable ring and a contact shadow that tracks the bag's projected width. Desktop box is 300×430, phones 230×330.
+- **Content adjusted:** the spec-card callouts now end just outside the bag's turning sweep (half-diagonal about 130 px), so they never cut through it. The old static drop shadow is gone, and the caption gains a "360° view · illustrative" line.
+- **Note:** `bag-opc.png` and `bag-src.png` are byte-identical, so both grades show the OPC print until a real SRC artwork is supplied.
 
 ## What changed from V4.2
 

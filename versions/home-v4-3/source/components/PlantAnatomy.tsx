@@ -70,12 +70,6 @@ export interface PlantNode {
   panY: number; // focal point, % of image height
   scale: number; // desktop zoom (1 = whole canvas)
   depth: number; // 0 (far) to 1 (near), read from depth.png at panX/panY; drives the 3D pivot and marker glue
-  /**
-   * Optional hand-set camera framing (the marker stays at panX/panY). x/y: focal point in %, scale: zoom.
-   * edgeRevealVw lets the photo's edge move this far into view (fraction of viewport width); the photo
-   * then feathers into the section navy instead of showing a hard edge. Auto-zoom is skipped for a view.
-   */
-  view?: { x: number; y: number; scale: number; edgeRevealVw?: number };
 }
 
 /** WebGL 2.5D depth layer sources. `false` turns the layer off and keeps the flat <Image>. */
@@ -135,7 +129,7 @@ export interface PlantAnatomyProps {
 // SAMPLE DATA: confirm every figure with Fecto before launch
 export const PLANT_NODES: PlantNode[] = [
   { id: 'overview', label: 'Whole plant', kicker: 'Overview', title: 'Sangjani, Islamabad', blurb: 'A dry-process cement plant that turns limestone into 50 kg bags, with part of its power generated on site.', metrics: [{ label: 'Clinker capacity', value: 3000, unit: 'MT/day' }, { label: 'Quality system', value: 'ISO 9001:2015' }], panX: 50, panY: 50, scale: 1, depth: 0.417 },
-  { id: 'crusher', label: 'Crusher', kicker: 'Stage 01', title: 'Crushing limestone', blurb: 'Quarried limestone is crushed to a size the rest of the plant can handle.', metrics: [{ label: 'Material', value: 'Limestone' }, { label: 'Role', value: 'Primary crushing' }], panX: 12, panY: 38, scale: 1.9, depth: 0.297, view: { x: 8.5, y: 37.5, scale: 1.95, edgeRevealVw: 0.3 } }, // framed between the excavators and the crusher; conveyor trails off to the right
+  { id: 'crusher', label: 'Crusher', kicker: 'Stage 01', title: 'Crushing limestone', blurb: 'Quarried limestone is crushed to a size the rest of the plant can handle.', metrics: [{ label: 'Material', value: 'Limestone' }, { label: 'Role', value: 'Primary crushing' }], panX: 12, panY: 38, scale: 1.9, depth: 0.297 },
   { id: 'stacker-reclaimer', label: 'Stacker and reclaimer', kicker: 'Stage 02', title: 'Blending the feed', blurb: 'Crushed stone is stacked in layers and reclaimed together, so the kiln feed stays consistent.', metrics: [{ label: 'Purpose', value: 'Consistent kiln feed' }, { label: 'Method', value: 'Layered blending' }], panX: 22, panY: 54, scale: 1.7, depth: 0.45 },
   { id: 'raw-grinding', label: 'Raw grinding', kicker: 'Stage 03', title: 'Raw meal', blurb: 'Limestone and additives are ground into fine raw meal.', metrics: [{ label: 'Output', value: 'Fine raw meal' }, { label: 'Next step', value: 'Preheater tower' }], panX: 38, panY: 43, scale: 1.8, depth: 0.407 },
   { id: 'kiln', label: 'Preheater, kiln, cooler', kicker: 'Stage 04', title: 'The kiln', blurb: 'Raw meal is heated in the rotary kiln to form clinker, then cooled quickly.', metrics: [{ label: 'Kiln temperature', value: 1450, unit: '°C' }, { label: 'Capacity', value: 3000, unit: 'MT/day' }, { label: 'Process', value: 'Dry process' }], panX: 53, panY: 44, scale: 2.1, depth: 0.383 },
@@ -743,13 +737,10 @@ export default function PlantAnatomy({
 
   useEffect(() => {
     if (!activeNode) return;
-    const view = activeNode.view;
-    const zoom = view?.scale ?? activeNode.scale;
-    const s0 = isMobile ? Math.max(1, 1 + (zoom - 1) * MOBILE_ZOOM_FACTOR) : Math.max(1, zoom);
-    const u = ((view?.x ?? activeNode.panX) / 100 - 0.5) * canvasW;
-    const v = ((view?.y ?? activeNode.panY) / 100 - 0.5) * canvasH;
+    const s0 = isMobile ? Math.max(1, 1 + (activeNode.scale - 1) * MOBILE_ZOOM_FACTOR) : Math.max(1, activeNode.scale);
+    const u = (activeNode.panX / 100 - 0.5) * canvasW;
+    const v = (activeNode.panY / 100 - 0.5) * canvasH;
     const a = isMobile ? ANCHORS.MOBILE : ANCHORS.DESKTOP;
-    const edgeReveal = (view?.edgeRevealVw ?? 0) * vw; // px the photo edge may enter the viewport
     // Stages near the photo's edge (crusher, packing, power) can't reach the anchor at their authored zoom
     // without revealing the edge, so the clamp would leave them under the HUD. Zoom in just enough for the
     // focal point to land on the anchor: smallest s with |anchor - s*off| <= (PULL_SAFETY*s*L - V) / 2.
@@ -759,11 +750,11 @@ export default function PlantAnatomy({
       const hi = k * L + off;
       return lo <= 0 || hi <= 0 ? Infinity : Math.max((V / 2 + anchor) / hi, (V / 2 - anchor) / lo);
     };
-    const sFit = view ? s0 : Math.max(fit(u, a.ax * vw, canvasW, vw), fit(v, a.ay * vh, canvasH, vh));
+    const sFit = Math.max(fit(u, a.ax * vw, canvasW, vw), fit(v, a.ay * vh, canvasH, vh));
     const sCap = Math.max(s0, (SOURCE_PX_WIDTH * MAX_UPSCALE) / canvasW);
     const s = Math.min(Math.max(s0, sFit), sCap);
     const s2 = s * PULL_SAFETY; // safety for the mid-flight pull-back
-    const maxX = Math.max(0, (s2 * canvasW - vw) / 2) + edgeReveal;
+    const maxX = Math.max(0, (s2 * canvasW - vw) / 2);
     const maxY = Math.max(0, (s2 * canvasH - vh) / 2);
     const tx = Math.min(maxX, Math.max(-maxX, a.ax * vw - s * u));
     const ty = Math.min(maxY, Math.max(-maxY, a.ay * vh - s * v));
@@ -908,7 +899,7 @@ export default function PlantAnatomy({
                   placeholder={blurDataURL ? 'blur' : 'empty'}
                   blurDataURL={blurDataURL}
                   onError={() => setImageError(true)}
-                  className="select-none object-cover [mask-image:linear-gradient(to_right,transparent,black_2.5%,black_97.5%,transparent)]"
+                  className="select-none object-cover"
                 />
               )}
 
