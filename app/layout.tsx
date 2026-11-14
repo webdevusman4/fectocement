@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import SmoothScroll from '@/components/SmoothScroll';
+import ChatWidget from '@/components/assistant/ChatWidget';
 import './globals.css';
 
 const inter = Inter({
@@ -33,6 +34,8 @@ export default function RootLayout({
       <body className="text-slate-900 bg-[#F1F5F9] antialiased min-h-screen selection:bg-[#F4D5AB] selection:text-[#000080]">
         <SmoothScroll />
         {children}
+        {/* Floating "Ask Fecto AI" assistant on every page (hidden on /assistant) */}
+        <ChatWidget />
       </body>
     </html>
   );

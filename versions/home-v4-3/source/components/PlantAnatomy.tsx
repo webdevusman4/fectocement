@@ -1131,7 +1131,7 @@ export default function PlantAnatomy({
           {showMockNotice && (
             <motion.div
               style={irisActive ? { opacity: hudOpacity } : undefined}
-              className="pointer-events-none absolute bottom-6 right-8 z-30 hidden md:block"
+              className="pointer-events-none absolute bottom-6 right-60 z-30 hidden md:block"
             >
               <span className="inline-block rounded-full border border-white/10 bg-black/40 px-3 py-1 font-mono text-[11px] text-white/80 backdrop-blur-sm">
                 Illustrative image, sample figures

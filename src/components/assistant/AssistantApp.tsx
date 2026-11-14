@@ -329,7 +329,11 @@ export default function AssistantApp() {
     }
   };
 
-  const hasMic = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+  // Detect voice input after mount, so the server HTML and the first client render match (no hydration error)
+  const [hasMic, setHasMic] = useState(false);
+  useEffect(() => {
+    setHasMic('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+  }, []);
   const hasMessages = messages.length > 0;
 
   /* ─── Sidebar content (shared between desktop sidebar and mobile drawer) ─── */
