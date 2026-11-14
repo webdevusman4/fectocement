@@ -207,7 +207,7 @@ export default function ChatWidget() {
             aria-label="Fecto Smart Assistant"
             {...panelMotion}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-white shadow-[0_30px_80px_-20px_rgba(0,0,60,0.45)] sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[min(620px,calc(100dvh-8rem))] sm:w-[400px] sm:rounded-3xl sm:border sm:border-slate-200"
+            className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-white shadow-[0_30px_80px_-20px_rgba(0,0,60,0.45)] sm:inset-auto sm:bottom-[9.5rem] sm:right-6 sm:h-[min(600px,calc(100dvh-11.5rem))] sm:w-[400px] sm:rounded-3xl sm:border sm:border-slate-200"
           >
             {/* Header */}
             <header className="flex items-center gap-3 bg-[linear-gradient(135deg,#000080_0%,#0B1245_100%)] px-4 py-3.5 text-white">
@@ -373,7 +373,8 @@ export default function ChatWidget() {
         aria-expanded={open}
         aria-controls="fecto-chat-panel"
         aria-label={open ? 'Close assistant' : 'Ask Fecto AI'}
-        className={`fixed bottom-5 right-5 z-40 items-center gap-2.5 rounded-full bg-[#000080] p-1.5 pr-1.5 text-white shadow-[0_18px_40px_-12px_rgba(0,0,128,0.65)] ring-1 ring-white/20 transition hover:bg-[#000066] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] sm:bottom-6 sm:right-6 sm:pr-5 ${
+        // Raised above the bottom-right "Powered by Netlify" badge that Netlify adds on the live site
+        className={`fixed bottom-20 right-5 z-40 items-center gap-2.5 rounded-full bg-[#000080] p-1.5 pr-1.5 text-white shadow-[0_18px_40px_-12px_rgba(0,0,128,0.65)] ring-1 ring-white/20 transition hover:bg-[#000066] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4D5AB] sm:bottom-20 sm:right-6 sm:pr-5 ${
           open ? 'hidden sm:flex' : 'flex'
         }`}
       >
